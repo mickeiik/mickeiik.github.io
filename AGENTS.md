@@ -1,3 +1,9 @@
+## Workflow
+
+- Development happens in the private repository (`origin` = `mickeiik.github.io-staging`). Work on `staging`; `main` publishes through an automatic mirror to the public `mickeiik.github.io` repository.
+- Never commit directly to the public repository.
+- Every commit must use `mickeiik@users.noreply.github.com`; a private email blocks the mirror push (GH007).
+
 ## Development
 
 When starting the dev server, use background mode:

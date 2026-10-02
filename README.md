@@ -28,6 +28,23 @@ Personal portfolio built with [Astro](https://astro.build).
 | `npm run build`           | Build your production site to `./dist/`       |
 | `npm run preview`         | Preview your build locally, before deploying  |
 
+## Workflow
+
+Development happens in the private `mickeiik.github.io-staging` repository:
+
+- `staging`: work branch, WIP and drafts.
+- `main`: publishing branch. A push to `main` is mirrored automatically to the public `mickeiik.github.io` repository, whose workflow builds and deploys the site.
+
+Publish a change:
+
+```sh
+git switch main
+git merge --ff-only staging
+git push
+```
+
+Rules: never commit directly to the public repository, and always use the GitHub noreply email (`mickeiik@users.noreply.github.com`) for commits, otherwise the mirror push is rejected by GitHub (GH007).
+
 ## Deploying
 
 The `.github/workflows/deploy.yml` workflow builds the site and deploys it to
