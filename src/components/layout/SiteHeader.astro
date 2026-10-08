@@ -1,0 +1,470 @@
+---
+import Logo from './Logo.astro';
+import Icon from '../ui/Icon.astro';
+import { nav, type NavKey } from '../../data/site';
+import { homeModules } from '../../data/home';
+import { getTrack } from '../../lib/live';
+import { localizePath, otherLang, useTranslations, type Lang } from '../../i18n/utils';
+
+/**
+ * Persistent site header. It survives page changes (see BaseLayout), so the active
+ * pill and menu state are updated client-side by src/scripts/header.ts.
+ */
+interface Props {
+	lang: Lang;
+	active?: NavKey;
+	/** URL of this page in the other language. */
+	alternateUrl: string;
+}
+
+const { lang, active, alternateUrl } = Astro.props;
+// One persisted header per language, so switching language swaps in the translated header.
+const persistKey = `site-header-${lang}`;
+const t = useTranslations(lang);
+const track = homeModules.music ? getTrack() : null;
+
+const PILL_PAD = 4;
+const PILL_GAP = 2;
+const activeIndex = nav.findIndex((item) => item.key === active);
+const pillX = nav.slice(0, Math.max(activeIndex, 0)).reduce((x, item) => x + item.width[lang] + PILL_GAP, PILL_PAD);
+const pillWidth = activeIndex >= 0 ? nav[activeIndex].width[lang] : 0;
+const other = otherLang(lang);
+---
+
+<header class="site-header" data-site-header transition:persist={persistKey}>
+	<div class="bar page">
+		<Logo href={localizePath('/', lang)} label={t('logo.label')} />
+
+		<nav class="desktop-nav" aria-label={t('nav.label')}>
+			<div class="pill-track">
+				<span
+					class="pill"
+					aria-hidden="true"
+					data-nav-pill
+					style={`width: ${pillWidth}px; transform: translateX(${pillX}px); opacity: ${activeIndex >= 0 ? 1 : 0}`}
+				></span>
+				{
+					nav.map((item) => (
+						<a
+							class="nav-link"
+							href={localizePath(item.path, lang)}
+							data-nav={item.key}
+							aria-current={item.key === active ? 'page' : undefined}
+							style={`width: ${item.width[lang]}px`}
+						>
+							{t(item.label)}
+						</a>
+					))
+				}
+				<a class="nav-link lang mono" data-lang-switch href={alternateUrl} hreflang={other} lang={other} aria-label={t('nav.switch')}>
+					{other.toUpperCase()}
+				</a>
+			</div>
+		</nav>
+
+		<div class="phone-controls">
+			{
+				track && (
+					<button class="mini-player" type="button" aria-expanded="false" data-state="stopped" data-player-mini data-player-toggle aria-label={t('music.show')} data-label-show={t('music.show')} data-label-hide={t('music.hide')}>
+						<span class="mini-disc" aria-hidden="true">
+							<span />
+						</span>
+						<span class="mini-text">
+							<span class="mini-status mono" data-player-status data-label-stopped={t('music.stopped')} data-label-playing={t('music.nowPlaying')}>
+								{t('music.stopped')}
+							</span>
+							<span class="mini-title">{track.title}</span>
+						</span>
+						<span class="mini-eq" aria-hidden="true">
+							<i />
+							<i />
+							<i />
+						</span>
+						<Icon name="chevron-down" size={16} strokeWidth={2} class="mini-chevron" />
+					</button>
+				)
+			}
+			<button class="menu-button" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle data-label-open={t('nav.open')} data-label-close={t('nav.close')} aria-label={t('nav.open')}>
+				<Icon name="menu" size={20} strokeWidth={2} class="icon-open" />
+				<Icon name="close" size={20} strokeWidth={2} class="icon-close" />
+			</button>
+		</div>
+	</div>
+
+	<nav id="site-menu" class="phone-menu" aria-label={t('nav.label')} data-menu hidden>
+		{
+			nav.map((item) => (
+				<a class="menu-link" href={localizePath(item.path, lang)} data-nav={item.key} aria-current={item.key === active ? 'page' : undefined}>
+					<span class="display">{t(item.label)}</span>
+					<span class="mono">{item.path === '/' ? '~/' : `./${t(item.label).toLowerCase().replace(/\s+/g, '-')}`}</span>
+				</a>
+			))
+		}
+		<div class="menu-lang">
+			<span class="mono">{t('nav.language')}</span>
+			<span class="segmented mono">
+				<span aria-current="true">{lang.toUpperCase()}</span>
+				<a data-lang-switch href={alternateUrl} hreflang={other} lang={other} aria-label={t('nav.switch')}>{other.toUpperCase()}</a>
+			</span>
+		</div>
+	</nav>
+
+	<div class="read-progress" aria-hidden="true"><span></span></div>
+</header>
+
+<script>
+	import '../../scripts/header';
+</script>
+
+<style>
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding-block: 14px;
+	}
+
+	/* Desktop pill navigation */
+
+	.pill-track {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 4px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-pill);
+		background: var(--color-surface);
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+
+	.pill {
+		position: absolute;
+		top: 4px;
+		bottom: 4px;
+		left: 0;
+		border-radius: var(--radius-pill);
+		background: var(--color-text);
+	}
+
+	.pill-track[data-ready] .pill {
+		transition:
+			transform 0.55s var(--ease-spring),
+			width 0.55s var(--ease-spring),
+			opacity 0.3s;
+	}
+
+	.nav-link {
+		position: relative;
+		z-index: 1;
+		display: inline-flex;
+		justify-content: center;
+		padding: 10px 0;
+		border-radius: var(--radius-pill);
+		transition: color 0.35s;
+	}
+
+	.nav-link[aria-current='page'],
+	.nav-link[aria-current='page']:hover {
+		color: var(--color-ink);
+	}
+
+	.nav-link.lang {
+		width: 52px;
+		font-size: var(--text-sm);
+	}
+
+	/* Phone controls */
+
+	.phone-controls {
+		display: none;
+		flex: 1;
+		min-width: 0;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+
+	.menu-button {
+		flex: none;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 1px solid var(--color-border);
+		border-radius: 14px;
+		background: var(--color-surface);
+		color: var(--color-text);
+		transition:
+			background-color 0.25s,
+			color 0.25s;
+	}
+
+	.menu-button[aria-expanded='true'] {
+		background: var(--color-text);
+		color: var(--color-ink);
+	}
+
+	.menu-button :global(.icon-close),
+	.menu-button[aria-expanded='true'] :global(.icon-open) {
+		display: none;
+	}
+
+	.menu-button[aria-expanded='true'] :global(.icon-close) {
+		display: block;
+	}
+
+	.mini-player {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+		height: var(--tap-target);
+		padding: 0 12px 0 6px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-pill);
+		background: var(--color-surface);
+		text-align: left;
+		transition:
+			background-color 0.25s,
+			border-color 0.25s;
+	}
+
+	.mini-player[aria-expanded='true'] {
+		background: var(--color-surface-raised);
+		border-color: var(--color-border-strong);
+	}
+
+	.mini-disc {
+		flex: none;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: conic-gradient(
+			var(--color-lime) 0 25%,
+			var(--color-periwinkle) 0 50%,
+			var(--color-coral) 0 75%,
+			var(--color-mint) 0
+		);
+		animation: spin 5s linear infinite;
+	}
+
+	.mini-disc span {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--color-surface);
+	}
+
+	.mini-text {
+		flex: 1;
+		min-width: 0;
+		line-height: 1.2;
+	}
+
+	.mini-status {
+		display: block;
+		overflow: hidden;
+		font-size: 10px;
+		color: var(--color-lime);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mini-title {
+		display: block;
+		overflow: hidden;
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mini-eq {
+		display: flex;
+		align-items: flex-end;
+		gap: 2px;
+		height: 16px;
+	}
+
+	.mini-eq i {
+		width: 3px;
+		height: 20%;
+		border-radius: 2px;
+		background: var(--color-lime);
+		animation: equalizer 1.1s ease-in-out infinite;
+	}
+
+	.mini-eq i:nth-child(2) {
+		animation-delay: 0.25s;
+	}
+	.mini-eq i:nth-child(3) {
+		animation-delay: 0.5s;
+	}
+
+	/* Stopped: the disc and equalizer rest (src/scripts/music.ts sets data-state). */
+	.mini-player[data-state='stopped'] .mini-status {
+		color: var(--color-text-muted);
+	}
+
+	.mini-player[data-state='stopped'] :is(.mini-disc, .mini-eq i) {
+		animation-play-state: paused;
+	}
+
+	.mini-player[data-state='stopped'] .mini-eq i {
+		background: var(--color-control-hover);
+	}
+
+	.mini-player :global(.mini-chevron) {
+		color: var(--color-text-muted);
+		transition: transform 0.35s var(--ease-spring);
+	}
+
+	.mini-player[aria-expanded='true'] :global(.mini-chevron) {
+		transform: rotate(180deg);
+	}
+
+	/* Phone menu */
+
+	.phone-menu {
+		position: absolute;
+		top: 100%;
+		left: var(--page-gutter);
+		right: var(--page-gutter);
+		padding: var(--space-2);
+		border: 1px solid var(--color-border-raised);
+		border-radius: var(--radius-xl);
+		background: var(--color-surface);
+		box-shadow: 0 20px 40px rgb(0 0 0 / 50%);
+		animation: menu-drop 0.3s var(--ease-emphasis) both;
+	}
+
+	@keyframes menu-drop {
+		from {
+			opacity: 0;
+			transform: translateY(-10px) scale(0.98);
+		}
+	}
+
+	.menu-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 52px;
+		margin-bottom: 4px;
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-md);
+		font-size: var(--text-lg);
+	}
+
+	.menu-link .mono {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.menu-link[aria-current='page'] {
+		background: var(--color-control);
+	}
+
+	.menu-link[aria-current='page'] .mono {
+		color: var(--color-lime);
+	}
+
+	.menu-lang {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin-top: 4px;
+		padding: 10px var(--space-2) 4px;
+		border-top: 1px solid var(--color-border);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.segmented {
+		display: inline-flex;
+		padding: 3px;
+		border-radius: var(--radius-pill);
+		background: var(--color-bg);
+		font-size: var(--text-sm);
+		color: var(--color-text);
+	}
+
+	.segmented > * {
+		padding: 8px 14px;
+		border-radius: var(--radius-pill);
+	}
+
+	.segmented [aria-current] {
+		background: var(--color-text);
+		color: var(--color-ink);
+	}
+
+	/* Reading progress, only on article pages (html[data-page='article']) */
+
+	.read-progress {
+		display: none;
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		height: 3px;
+	}
+
+	.read-progress span {
+		display: block;
+		height: 100%;
+		background: var(--color-lime);
+		transform-origin: 0 50%;
+		transform: scaleX(0.06);
+	}
+
+	:global(html[data-page='article']) .read-progress {
+		display: block;
+	}
+
+	@supports (animation-timeline: scroll()) {
+		.read-progress span {
+			animation: read-progress linear both;
+			animation-timeline: scroll(root);
+		}
+	}
+
+	@media (max-width: 760px) {
+		.bar {
+			padding-block: 10px;
+		}
+
+		.desktop-nav {
+			display: none;
+		}
+
+		.phone-controls {
+			display: flex;
+		}
+	}
+
+	@media (min-width: 761px) {
+		.phone-menu {
+			display: none;
+		}
+	}
+</style>

@@ -1,0 +1,101 @@
+---
+import Tile from '../ui/Tile.astro';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+/** "Written to" card for posts with a `soundtrack` in their frontmatter. */
+interface Props {
+	soundtrack: { title: string; artist: string; url?: string };
+	lang: Lang;
+	delay?: number;
+}
+
+const { soundtrack, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile href={soundtrack.url} as="div" padding="sm" delay={delay} animate="enter-fast" class="soundtrack">
+	<div class="disc" aria-hidden="true"><span></span></div>
+	<div class="info">
+		<p class="mono label">{t('music.writtenTo')}</p>
+		<p class="title">{soundtrack.title}</p>
+		<p class="artist">{soundtrack.artist}</p>
+	</div>
+	<span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+</Tile>
+
+<style>
+	.soundtrack {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+
+	.disc {
+		flex: none;
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: conic-gradient(
+			var(--color-lime) 0 25%,
+			var(--color-periwinkle) 0 50%,
+			var(--color-coral) 0 75%,
+			var(--color-mint) 0
+		);
+		animation: spin 5s linear infinite;
+	}
+
+	.disc span {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--color-surface);
+	}
+
+	.info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.label {
+		font-size: var(--text-xs);
+		color: var(--color-lime);
+	}
+
+	.title {
+		margin-top: 2px;
+		font-weight: 600;
+	}
+
+	.artist {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	.equalizer {
+		display: flex;
+		align-items: flex-end;
+		gap: 3px;
+		height: 24px;
+	}
+
+	.equalizer i {
+		width: 3px;
+		height: 20%;
+		border-radius: 2px;
+		background: var(--color-lime);
+		animation: equalizer 1s ease-in-out infinite;
+	}
+
+	.equalizer i:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.equalizer i:nth-child(3) {
+		animation-delay: 0.45s;
+	}
+	.equalizer i:nth-child(4) {
+		animation-delay: 0.1s;
+	}
+</style>

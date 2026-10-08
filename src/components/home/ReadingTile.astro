@@ -1,0 +1,73 @@
+---
+import Tile from '../ui/Tile.astro';
+import type { Book } from '../../lib/live';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	book: Book;
+	lang: Lang;
+	delay?: number;
+}
+
+const { book, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile delay={delay} animate="enter-fast" phoneFull class="reading" aria-label={t('home.reading')}>
+	<div class="cover" aria-hidden="true"></div>
+	<div class="info">
+		<p class="mono label">{t('home.reading')}</p>
+		<p class="title">{book.title}</p>
+		<p class="author">{book.author}</p>
+	</div>
+</Tile>
+
+<style>
+	.reading {
+		display: flex;
+		align-items: flex-end;
+		gap: 18px;
+	}
+
+	.cover {
+		flex: none;
+		width: 66px;
+		height: 98px;
+		border-radius: 4px 10px 10px 4px;
+		background: var(--color-coral);
+		box-shadow:
+			inset 7px 0 0 rgb(0 0 0 / 18%),
+			6px 8px 0 var(--color-control);
+	}
+
+	.info {
+		min-width: 0;
+	}
+
+	.label {
+		margin-bottom: 6px;
+		font-size: var(--text-xs);
+		color: var(--color-coral);
+	}
+
+	.title {
+		font-weight: 600;
+	}
+
+	.author {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	@media (max-width: 760px) {
+		.reading {
+			align-items: center;
+			padding: 18px;
+		}
+
+		.cover {
+			width: 48px;
+			height: 72px;
+		}
+	}
+</style>

@@ -1,0 +1,176 @@
+/*
+ * Shared motion: entrance, list transitions and the small ambient loops.
+ * Components set --delay inline to stagger their entrance.
+ */
+
+.enter {
+	animation: enter var(--duration-slow) var(--ease-out) var(--delay, 0s) backwards;
+}
+
+.enter-fast {
+	animation: enter var(--duration-base) var(--ease-out) var(--delay, 0s) backwards;
+}
+
+@keyframes enter {
+	from {
+		opacity: 0;
+		transform: translateY(18px) scale(0.98);
+	}
+}
+
+/* Cards entering a filtered list unfold from their top edge... */
+.list-enter {
+	overflow: hidden;
+	transform-origin: 50% 0;
+	animation: list-enter var(--duration-base) var(--ease-emphasis) var(--delay, 0s) backwards;
+}
+
+@keyframes list-enter {
+	from {
+		opacity: 0;
+		transform: translateY(-12px) scale(0.98);
+		max-height: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+		margin-top: calc(var(--grid-gap) * -1);
+		border-width: 0;
+	}
+	to {
+		max-height: 420px;
+	}
+}
+
+/* ...and fold back up when they leave. */
+.list-leave {
+	overflow: hidden;
+	pointer-events: none;
+	transform-origin: 50% 0;
+	animation: list-leave 0.38s var(--ease-in-out) var(--delay, 0s) forwards;
+}
+
+@keyframes list-leave {
+	0% {
+		opacity: 1;
+		max-height: 420px;
+	}
+	45% {
+		opacity: 0;
+		transform: scale(0.96) translateY(-6px);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(0.96);
+		max-height: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+		margin-top: calc(var(--grid-gap) * -1);
+		border-width: 0;
+	}
+}
+
+.pop-in {
+	animation: pop-in 0.35s var(--ease-emphasis) 0.1s backwards;
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: scale(0.97);
+	}
+}
+
+@keyframes blink {
+	50% {
+		opacity: 0;
+	}
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes equalizer {
+	0%,
+	100% {
+		height: 20%;
+	}
+	50% {
+		height: 100%;
+	}
+}
+
+@keyframes pulse-ring {
+	0% {
+		box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 10px transparent;
+	}
+}
+
+@keyframes wave {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+
+@keyframes typing {
+	from {
+		width: 0;
+	}
+}
+
+@keyframes check-pop {
+	0% {
+		transform: scale(0.6);
+	}
+	60% {
+		transform: scale(1.25);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes heading-flash {
+	0% {
+		transform: scaleX(0);
+		opacity: 1;
+	}
+	35% {
+		transform: scaleX(1);
+		opacity: 1;
+	}
+	100% {
+		transform: scaleX(1);
+		opacity: 0;
+	}
+}
+
+@keyframes read-progress {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+
+/* Respect the visitor's motion settings everywhere. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		animation-delay: 0s !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

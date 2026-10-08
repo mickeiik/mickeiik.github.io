@@ -1,0 +1,123 @@
+---
+/** Git history illustration for the 404 page: a dashed branch wanders off to a missing commit. */
+interface Props {
+	hereLabel: string;
+}
+
+const { hereLabel } = Astro.props;
+---
+
+<div class="lost-branch" aria-hidden="true">
+	<svg viewBox="0 0 190 210" fill="none">
+		<path d="M44 18 V192" stroke="var(--color-border-dashed)" stroke-width="3" stroke-linecap="round"></path>
+		<path class="branch" d="M44 70 C44 104 132 92 132 128 V170" stroke="var(--color-coral)" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 7"></path>
+		<circle cx="44" cy="30" r="8" fill="var(--color-periwinkle)"></circle>
+		<circle cx="44" cy="70" r="9" fill="var(--color-lime)"></circle>
+		<circle cx="44" cy="120" r="8" fill="var(--color-periwinkle)"></circle>
+		<circle cx="44" cy="170" r="8" fill="var(--color-periwinkle)"></circle>
+		<circle class="ring" cx="132" cy="170" r="12" stroke="var(--color-coral)" stroke-width="2"></circle>
+		<circle class="lost" cx="132" cy="170" r="12" fill="var(--color-coral)"></circle>
+		<text x="132" y="175" text-anchor="middle" class="question">?</text>
+		<text x="60" y="34" class="label">main</text>
+		<text x="60" y="74" class="label here">{hereLabel}</text>
+		<text x="100" y="200" class="label head">HEAD?</text>
+	</svg>
+</div>
+
+<style>
+	.lost-branch {
+		flex: none;
+		width: 220px;
+		height: 240px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		background: var(--color-code-bg);
+	}
+
+	svg {
+		width: 190px;
+		height: 210px;
+	}
+
+	.branch {
+		animation: march 1s linear infinite;
+	}
+
+	.lost,
+	.ring {
+		transform-box: fill-box;
+		transform-origin: 50% 50%;
+	}
+
+	.lost {
+		animation: lost 1.6s ease-in-out infinite;
+	}
+
+	.ring {
+		animation: ring 1.6s ease-out infinite;
+	}
+
+	.question {
+		font-family: var(--font-display), sans-serif;
+		font-size: 14px;
+		font-weight: 800;
+		fill: var(--color-ink);
+	}
+
+	.label {
+		font-family: var(--font-mono), monospace;
+		font-size: 11px;
+		fill: var(--color-text-faint);
+	}
+
+	.here {
+		fill: var(--color-lime);
+	}
+
+	.head {
+		fill: var(--color-coral);
+	}
+
+	@keyframes march {
+		to {
+			stroke-dashoffset: -26;
+		}
+	}
+
+	@keyframes lost {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.2);
+		}
+	}
+
+	@keyframes ring {
+		from {
+			transform: scale(1);
+			opacity: 0.8;
+		}
+		to {
+			transform: scale(2.6);
+			opacity: 0;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.lost-branch {
+			width: 190px;
+			height: 200px;
+			margin: 0 auto;
+		}
+
+		svg {
+			width: 166px;
+			height: 184px;
+		}
+	}
+</style>

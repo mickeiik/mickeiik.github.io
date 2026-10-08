@@ -1,0 +1,186 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+/**
+ * The bento card every page is built from.
+ * - `tone` picks the fill (dark surface or one of the accent fills).
+ * - `cols` / `rows` span cells when the tile sits in a <BentoGrid>.
+ * - `href` turns it into a link with the hover lift.
+ * - `delay` staggers its entrance animation (seconds).
+ */
+type Tone = 'surface' | 'lime' | 'periwinkle' | 'coral' | 'light';
+
+interface Props extends Omit<HTMLAttributes<'section'>, 'class'> {
+	as?: 'section' | 'article' | 'div' | 'nav' | 'aside' | 'li' | 'form';
+	href?: string;
+	tone?: Tone;
+	cols?: 1 | 2 | 3 | 'full';
+	rows?: 1 | 2;
+	/** Take the full row on phones even when `cols` is 1. */
+	phoneFull?: boolean;
+	padding?: 'sm' | 'md' | 'lg' | 'none';
+	radius?: 'lg' | 'xl';
+	delay?: number;
+	animate?: 'enter' | 'enter-fast' | 'none';
+	class?: string;
+}
+
+const {
+	as = 'section',
+	href,
+	tone = 'surface',
+	cols = 1,
+	rows = 1,
+	phoneFull = false,
+	padding = 'md',
+	radius = 'lg',
+	delay = 0,
+	animate = 'enter',
+	class: className,
+	style,
+	...attrs
+} = Astro.props;
+
+const Tag = href ? 'a' : as;
+const animation = animate === 'none' ? undefined : animate;
+---
+
+<Tag
+	href={href}
+	class:list={[
+		'tile',
+		`tone-${tone}`,
+		`pad-${padding}`,
+		`radius-${radius}`,
+		cols !== 1 && `cols-${cols}`,
+		rows === 2 && 'rows-2',
+		phoneFull && 'phone-full',
+		href && 'is-link',
+		animation,
+		className,
+	]}
+	style={[delay ? `--delay: ${delay}s` : '', style ?? ''].filter(Boolean).join('; ') || undefined}
+	{...attrs}
+>
+	<slot />
+</Tag>
+
+<style>
+	.tile {
+		display: block;
+		min-width: 0;
+		border: 1px solid transparent;
+		color: var(--color-text);
+	}
+
+	.radius-lg {
+		border-radius: var(--radius-2xl);
+	}
+
+	.radius-xl {
+		border-radius: var(--radius-3xl);
+	}
+
+	.pad-none {
+		padding: 0;
+	}
+
+	.pad-sm {
+		padding: var(--space-5);
+	}
+
+	.pad-md {
+		padding: var(--space-6);
+	}
+
+	.pad-lg {
+		padding: clamp(var(--space-7), 5vw, var(--space-16));
+	}
+
+	.tone-surface {
+		background: var(--color-surface);
+		border-color: var(--color-border);
+	}
+
+	.tone-lime {
+		background: var(--color-lime);
+		border-color: var(--color-lime);
+		color: var(--color-ink);
+	}
+
+	.tone-periwinkle {
+		background: var(--color-periwinkle);
+		border-color: var(--color-periwinkle);
+		color: var(--color-ink);
+	}
+
+	.tone-coral {
+		background: var(--color-coral);
+		border-color: var(--color-coral);
+		color: var(--color-ink);
+	}
+
+	.tone-light {
+		background: var(--color-text);
+		border-color: var(--color-text);
+		color: var(--color-ink);
+	}
+
+	.cols-2 {
+		grid-column: span 2;
+	}
+
+	.cols-3 {
+		grid-column: span 3;
+	}
+
+	.cols-full {
+		grid-column: 1 / -1;
+	}
+
+	.rows-2 {
+		grid-row: span 2;
+	}
+
+	.is-link {
+		transition:
+			transform 0.25s var(--ease-out),
+			border-color 0.25s;
+	}
+
+	/* No color change on hover: each tone keeps its own text color (the global a:hover is lower specificity). */
+	.is-link:hover {
+		transform: translateY(-4px);
+	}
+
+	.tone-surface.is-link:hover {
+		border-color: var(--color-border-strong);
+	}
+
+	/* Arrows inside a linked tile nudge toward the destination. */
+	.is-link :global(.tile-arrow) {
+		transition: transform 0.25s var(--ease-out);
+	}
+
+	.is-link:hover :global(.tile-arrow) {
+		transform: translate(4px, -4px);
+	}
+
+	/* On phones the grid has two columns: wide tiles take the full row. */
+	@media (max-width: 760px) {
+		.cols-2,
+		.cols-3,
+		.cols-full,
+		.phone-full {
+			grid-column: 1 / -1;
+		}
+
+		.rows-2 {
+			grid-row: auto;
+		}
+
+		.is-link:active {
+			transform: scale(0.98);
+		}
+	}
+</style>

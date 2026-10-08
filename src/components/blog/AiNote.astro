@@ -1,0 +1,47 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+/** Disclosure shown on posts with `aiAssisted: true`. */
+interface Props {
+	lang: Lang;
+	delay?: number;
+}
+
+const { lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile tone="lime" padding="sm" delay={delay} animate="enter-fast" class="ai-note" role="note">
+	<p class="mono label">
+		<Icon name="sparkle" size={15} strokeWidth={2} />
+		{t('post.howWritten')}
+	</p>
+	<p class="text">{t('post.aiNote')}</p>
+</Tile>
+
+<style>
+	.label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+		font-size: var(--text-xs);
+	}
+
+	.text {
+		font-weight: 500;
+	}
+
+	@media (max-width: 760px) {
+		.ai-note {
+			border-radius: 22px;
+			padding: var(--space-4) 18px;
+		}
+
+		.text {
+			font-size: 0.875rem;
+		}
+	}
+</style>

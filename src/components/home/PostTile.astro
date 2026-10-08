@@ -1,0 +1,135 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import { series } from '../../data/series';
+import { postUrl, type Post } from '../../lib/posts';
+import { formatDate, useTranslations, type Lang } from '../../i18n/utils';
+
+/** A post on the homepage: `featured` is the large periwinkle tile, otherwise a small one. */
+interface Props {
+	post: Post;
+	lang: Lang;
+	featured?: boolean;
+	delay?: number;
+}
+
+const { post, lang, featured = false, delay } = Astro.props;
+const t = useTranslations(lang);
+const { title, description, pubDate } = post.data;
+const seriesInfo = post.data.series && series[post.data.series.id];
+const kicker = seriesInfo ? `${seriesInfo.title[lang]}, ${t('post.part', { part: post.data.series!.part })}` : null;
+const label = seriesInfo ? `${post.data.series!.id}/${String(post.data.series!.part).padStart(2, '0')}` : formatDate(pubDate, lang, 'iso');
+---
+
+{
+	featured ? (
+		<Tile href={postUrl(post)} cols={2} tone="periwinkle" padding="lg" delay={delay} animate="enter-fast" class="featured">
+			<div class="head">
+				<p class="badge">
+					{t('home.latest')}
+					{kicker && ` · ${kicker}`}
+				</p>
+				<Icon name="arrow-up-right" size={30} strokeWidth={2} class="tile-arrow" />
+			</div>
+			<div>
+				<h2 class="display">{title}</h2>
+				<p class="description">{description}</p>
+			</div>
+		</Tile>
+	) : (
+		<Tile href={postUrl(post)} delay={delay} animate="enter-fast" class="compact">
+			<div class="head">
+				<p class:list={['label mono', seriesInfo ? 'is-series' : 'is-date']}>{label}</p>
+				<Icon name="arrow-up-right" size={20} strokeWidth={2} class="tile-arrow muted" />
+			</div>
+			<h2 class="display">{title}</h2>
+		</Tile>
+	)
+}
+
+<style>
+	.featured,
+	.compact {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--space-5);
+	}
+
+	.featured {
+		padding: var(--space-7);
+	}
+
+	.head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.head :global(svg) {
+		flex: none;
+	}
+
+	.badge {
+		display: inline-flex;
+		padding: 6px 12px;
+		border-radius: var(--radius-pill);
+		background: rgb(11 12 15 / 12%);
+		font-size: var(--text-sm);
+		font-weight: 600;
+	}
+
+	.featured h2 {
+		font-size: var(--text-2xl);
+		line-height: var(--leading-tight);
+		letter-spacing: -0.035em;
+	}
+
+	.description {
+		margin-top: 10px;
+		color: var(--color-on-periwinkle-soft);
+	}
+
+	.compact h2 {
+		font-size: var(--text-lg);
+		line-height: 1.15;
+		letter-spacing: -0.02em;
+	}
+
+	.label {
+		font-size: var(--text-xs);
+	}
+
+	.is-series {
+		color: var(--color-periwinkle);
+	}
+
+	.is-date {
+		color: var(--color-coral);
+	}
+
+	.compact :global(.muted) {
+		color: var(--color-text-muted);
+	}
+
+	@media (max-width: 760px) {
+		.featured h2 {
+			margin-top: var(--space-6);
+			font-size: 1.875rem;
+		}
+
+		.compact {
+			min-height: 170px;
+			padding: 18px;
+		}
+
+		.compact h2 {
+			font-size: 1.125rem;
+		}
+
+		.compact :global(.tile-arrow) {
+			display: none;
+		}
+	}
+</style>

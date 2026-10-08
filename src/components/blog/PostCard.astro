@@ -1,0 +1,171 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import { series } from '../../data/series';
+import { postUrl, readingTime, type Post } from '../../lib/posts';
+import { formatDate, useTranslations, type Lang } from '../../i18n/utils';
+
+/** A post in the Writing list. The data-* attributes feed the client-side filter. */
+interface Props {
+	post: Post;
+	lang: Lang;
+	delay?: number;
+}
+
+const { post, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+const { title, description, pubDate, tags } = post.data;
+const seriesInfo = post.data.series && series[post.data.series.id];
+---
+
+<Tile
+	as="li"
+	padding="none"
+	animate="none"
+	class="post-card list-enter"
+	style={`--delay: ${delay ?? 0}s`}
+	data-post-card
+	data-title={title.toLowerCase()}
+	data-tags={tags.join(' ')}
+	data-series={post.data.series?.id ?? ''}
+>
+	<div class="meta">
+		<time class:list={['mono', seriesInfo ? 'is-series' : 'is-date']} datetime={pubDate.toISOString()}>
+			{formatDate(pubDate, lang, 'iso')}
+		</time>
+		{seriesInfo && <span class="series">{`${seriesInfo.title[lang]} · ${t('post.part', { part: post.data.series!.part })}`}</span>}
+		<span class="read">{t('post.min', { n: readingTime(post) })}</span>
+	</div>
+	<a class="title-link" href={postUrl(post)}>
+		<h3 class="display">{title}</h3>
+		<Icon name="arrow-up-right" size={26} strokeWidth={2} class="tile-arrow" />
+	</a>
+	<p class="description">{description}</p>
+	{
+		tags.length > 0 && (
+			<ul class="tags" aria-label={t('post.tags')}>
+				{tags.map((tag) => (
+					<li>
+						<button type="button" class="tag mono" data-filter-tag={tag}>
+							#{tag}
+						</button>
+					</li>
+				))}
+			</ul>
+		)
+	}
+</Tile>
+
+<style>
+	.post-card {
+		padding: var(--space-7);
+		transition:
+			transform 0.25s var(--ease-out),
+			border-color 0.25s;
+	}
+
+	.post-card:hover {
+		transform: translateY(-4px);
+		border-color: var(--color-border-strong);
+	}
+
+	.post-card:hover :global(.tile-arrow) {
+		transform: translate(4px, -4px);
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) 14px;
+		font-size: var(--text-sm);
+	}
+
+	.is-series {
+		color: var(--color-periwinkle);
+	}
+
+	.is-date {
+		color: var(--color-coral);
+	}
+
+	.series {
+		padding: 3px 10px;
+		border-radius: var(--radius-pill);
+		background: var(--color-series-bg);
+		color: var(--color-series-text);
+		font-weight: 600;
+	}
+
+	.read {
+		color: var(--color-text-muted);
+	}
+
+	.title-link {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-4);
+		margin-top: var(--space-3);
+	}
+
+	.title-link :global(svg) {
+		flex: none;
+		margin-top: 4px;
+		color: var(--color-text-muted);
+		transition: transform 0.25s var(--ease-out);
+	}
+
+	h3 {
+		font-size: var(--text-xl);
+		line-height: 1.1;
+	}
+
+	.description {
+		max-width: 44rem;
+		margin-top: 10px;
+		color: var(--color-text-soft);
+	}
+
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: 18px;
+		padding: 0;
+		list-style: none;
+	}
+
+	.tag {
+		min-height: 32px;
+		padding: 0 12px;
+		border: 0;
+		border-radius: var(--radius-pill);
+		background: var(--color-control);
+		color: var(--color-text);
+		font-size: var(--text-xs);
+		transition: transform var(--duration-fast);
+	}
+
+	.tag:hover {
+		transform: translateY(-2px);
+	}
+
+	@media (max-width: 760px) {
+		.post-card {
+			padding: var(--space-5);
+		}
+
+		.title-link :global(svg) {
+			display: none;
+		}
+
+		h3 {
+			font-size: 1.4375rem;
+		}
+
+		.description {
+			font-size: 0.9375rem;
+		}
+	}
+</style>

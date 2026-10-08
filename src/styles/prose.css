@@ -1,0 +1,317 @@
+/*
+ * Article body typography and Markdown output (headings, lists, tables, quotes, code).
+ * Applied by wrapping rendered Markdown in an element with the `prose` class.
+ */
+
+.prose {
+	counter-reset: section;
+	font-size: var(--text-md);
+	line-height: var(--leading-prose);
+	color: var(--color-text-body);
+}
+
+.prose > * + * {
+	margin-top: var(--space-6);
+}
+
+.prose strong {
+	color: var(--color-text);
+}
+
+.prose a {
+	color: var(--color-lime);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+/* Section headings are numbered 01, 02... to match the table of contents. */
+.prose h2 {
+	position: relative;
+	counter-increment: section;
+	margin-top: 52px;
+	scroll-margin-top: var(--header-offset);
+	font-family: var(--font-display), sans-serif;
+	font-size: 1.875rem;
+	font-weight: 700;
+	line-height: 1.12;
+	letter-spacing: var(--tracking-tight);
+	color: var(--color-text);
+}
+
+.prose h2::before {
+	content: counter(section, decimal-leading-zero);
+	margin-right: var(--space-3);
+	font-family: var(--font-mono), monospace;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	letter-spacing: 0;
+	color: var(--color-lime);
+}
+
+/* Underline sweep when a section is reached from the table of contents. */
+.prose h2.is-flashing::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -8px;
+	height: 3px;
+	border-radius: 2px;
+	background: var(--color-lime);
+	transform-origin: 0 50%;
+	animation: heading-flash 1.6s var(--ease-emphasis) forwards;
+}
+
+.prose h3 {
+	margin-top: var(--space-10);
+	scroll-margin-top: var(--header-offset);
+	font-family: var(--font-display), sans-serif;
+	font-size: 1.375rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--color-text);
+}
+
+.prose h2 + *,
+.prose h3 + * {
+	margin-top: 18px;
+}
+
+.prose ul,
+.prose ol {
+	padding-left: 26px;
+}
+
+.prose li + li {
+	margin-top: var(--space-2);
+}
+
+.prose li {
+	padding-left: 4px;
+}
+
+.prose li::marker {
+	font-family: var(--font-mono), monospace;
+	color: var(--color-periwinkle);
+}
+
+.prose blockquote {
+	padding: var(--space-5) var(--space-6);
+	border-radius: var(--radius-lg);
+	background: var(--color-surface-raised);
+	font-size: 1.25rem;
+	font-style: italic;
+	color: var(--color-text);
+}
+
+.prose hr {
+	height: 1px;
+	border: 0;
+	background: var(--color-border);
+}
+
+.prose img {
+	height: auto;
+	border-radius: var(--radius-lg);
+}
+
+.prose figcaption,
+.prose img + em {
+	display: block;
+	margin-top: 10px;
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+}
+
+/* Tables sit in a rounded box; on phones they scroll sideways (see below). */
+.prose table {
+	width: 100%;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.prose th,
+.prose td {
+	min-width: 120px;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--color-border);
+	text-align: left;
+	vertical-align: top;
+}
+
+.prose tr:last-child td {
+	border-bottom: 0;
+}
+
+.prose th {
+	font-family: var(--font-mono), monospace;
+	font-size: var(--text-xs);
+	font-weight: 500;
+	color: var(--color-text-muted);
+}
+
+/* Inline code */
+.prose :not(pre) > code {
+	padding: 2px 7px;
+	border-radius: 7px;
+	background: var(--color-control);
+	font-family: var(--font-mono), monospace;
+	font-size: 0.84em;
+	color: var(--color-lime);
+}
+
+/* Code blocks, framed by src/lib/shiki-code-frame.mjs */
+.prose .code-frame {
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--color-code-bg);
+}
+
+.code-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+	background: var(--color-code-bar);
+	font-family: var(--font-mono), monospace;
+}
+
+.code-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	font-size: var(--text-sm);
+	color: var(--color-text-body);
+}
+
+.code-file {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.code-lang {
+	padding: 2px 8px;
+	border-radius: var(--radius-xs);
+	background: var(--color-series-bg);
+	color: var(--color-series-text);
+	font-size: var(--text-2xs);
+}
+
+.code-copy {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--color-control);
+	color: var(--color-text);
+	font-family: var(--font-mono), monospace;
+	font-size: var(--text-xs);
+	transition: background-color var(--duration-fast);
+}
+
+.code-copy:hover {
+	background: var(--color-control-hover);
+}
+
+.code-copy .code-icon-check,
+.code-copy.is-copied .code-icon-copy {
+	display: none;
+}
+
+.code-copy.is-copied .code-icon-check {
+	display: block;
+	color: var(--color-lime);
+	animation: check-pop 0.35s var(--ease-pop);
+}
+
+.prose pre.astro-code {
+	margin: 0;
+	padding: 14px 0;
+	font-family: var(--font-mono), monospace;
+	font-size: 0.875rem;
+	line-height: 1.8;
+}
+
+.prose pre.astro-code code {
+	display: grid;
+	min-width: max-content;
+	counter-reset: line;
+}
+
+.prose pre.astro-code .line {
+	padding-right: var(--space-6);
+}
+
+.prose pre.astro-code .line::before {
+	counter-increment: line;
+	content: counter(line);
+	display: inline-block;
+	width: 52px;
+	padding-right: 18px;
+	text-align: right;
+	color: #4a4f5c;
+	user-select: none;
+}
+
+.prose pre.astro-code .line.highlighted {
+	background: rgb(198 243 107 / 8%);
+	box-shadow: inset 3px 0 0 var(--color-lime);
+}
+
+@media (max-width: 760px) {
+	.prose {
+		font-size: 1.09375rem;
+		line-height: 1.72;
+	}
+
+	.prose > * + * {
+		margin-top: var(--space-5);
+	}
+
+	.prose h2 {
+		margin-top: var(--space-10);
+		font-size: 1.5625rem;
+	}
+
+	.prose h2::before {
+		display: block;
+		margin: 0 0 6px;
+		font-size: var(--text-sm);
+	}
+
+	.prose .code-frame,
+	.prose table {
+		margin-inline: -8px;
+	}
+
+	.prose table {
+		display: block;
+		width: auto;
+		max-width: calc(100% + 16px);
+		overflow-x: auto;
+	}
+
+	.prose pre.astro-code {
+		font-size: var(--text-sm);
+	}
+
+	.prose pre.astro-code .line::before {
+		width: 36px;
+		padding-right: 12px;
+	}
+}

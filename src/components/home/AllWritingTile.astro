@@ -1,0 +1,78 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import { localizePath, useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	lang: Lang;
+	/** Columns to span, chosen by the homepage to close the last row. */
+	cols?: 1 | 2 | 3 | 'full';
+	delay?: number;
+}
+
+const { lang, cols = 'full', delay } = Astro.props;
+const t = useTranslations(lang);
+const folder = lang === 'fr' ? 'articles' : 'writing';
+---
+
+<Tile href={localizePath('/blog/', lang)} cols={cols} tone="light" delay={delay} animate="enter-fast" class="all-writing">
+	<span class="text">
+		<span class="mono command">$ ls ./{folder}</span>
+		<span class="display label">{t('home.allWriting')}</span>
+	</span>
+	<span class="arrow tile-arrow"><Icon name="arrow-right" size={22} strokeWidth={2} /></span>
+</Tile>
+
+<style>
+	.all-writing {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		--tile-min-height: 0;
+		padding: var(--space-6) var(--space-7);
+	}
+
+	.text {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 14px;
+	}
+
+	.command {
+		font-size: var(--text-sm);
+		color: var(--color-on-light-muted);
+	}
+
+	.label {
+		font-size: var(--text-xl);
+	}
+
+	.arrow {
+		flex: none;
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-ink);
+		color: var(--color-text);
+	}
+
+	@media (max-width: 760px) {
+		.all-writing {
+			padding: 18px 20px;
+		}
+
+		.text {
+			flex-direction: column;
+			gap: 0;
+		}
+
+		.label {
+			font-size: var(--text-lg);
+		}
+	}
+</style>

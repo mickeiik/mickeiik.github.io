@@ -1,0 +1,117 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import Icon, { type IconName } from './Icon.astro';
+
+/** Pill button or link. `variant="primary"` is the lime call to action. */
+interface Props extends Omit<HTMLAttributes<'a'>, 'class'> {
+	href?: string;
+	variant?: 'primary' | 'secondary' | 'ink' | 'outline';
+	icon?: IconName;
+	iconOnly?: boolean;
+	label?: string;
+	block?: boolean;
+	type?: 'button' | 'submit';
+	class?: string;
+}
+
+const { href, variant = 'secondary', icon, iconOnly = false, label, block = false, type = 'button', class: className, ...attrs } =
+	Astro.props;
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+	href={href}
+	type={href ? undefined : type}
+	aria-label={iconOnly ? label : undefined}
+	class:list={['button', `variant-${variant}`, iconOnly && 'icon-only', block && 'block', className]}
+	{...attrs}
+>
+	{icon && <Icon name={icon} size={iconOnly ? 20 : 17} />}
+	{!iconOnly && <slot />}
+</Tag>
+
+<style>
+	.button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		padding: 0 18px;
+		border: 0;
+		border-radius: var(--radius-pill);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		white-space: nowrap;
+		transition:
+			transform var(--duration-fast),
+			background-color var(--duration-fast);
+	}
+
+	.button :global(svg) {
+		transition: transform var(--duration-fast);
+	}
+
+	.button:hover {
+		transform: translateY(-2px);
+	}
+
+	.button:hover :global(svg) {
+		transform: rotate(-8deg);
+	}
+
+	.variant-primary {
+		padding: 0 20px;
+		background: var(--color-lime);
+		color: var(--color-ink);
+		font-weight: 600;
+	}
+
+	.variant-primary:hover {
+		color: var(--color-ink);
+	}
+
+	.variant-secondary {
+		background: var(--color-control);
+		color: var(--color-text);
+	}
+
+	.variant-secondary:hover {
+		color: var(--color-text);
+		background: var(--color-control-hover);
+	}
+
+	.variant-ink {
+		background: var(--color-ink);
+		color: var(--color-text);
+		font-weight: 600;
+	}
+
+	.variant-ink:hover {
+		color: var(--color-text);
+	}
+
+	.variant-outline {
+		background: transparent;
+		border: 1px solid var(--color-border-strong);
+		color: var(--color-text);
+	}
+
+	.icon-only {
+		width: 100%;
+		height: 56px;
+		padding: 0;
+		border-radius: var(--radius-md);
+	}
+
+	.block {
+		display: flex;
+		width: 100%;
+	}
+
+	@media (max-width: 760px) {
+		.button {
+			min-height: 48px;
+		}
+	}
+</style>

@@ -1,0 +1,35 @@
+---
+import Tile from '../ui/Tile.astro';
+import NowPlaying from '../music/NowPlaying.astro';
+import type { Track } from '../../lib/live';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	track: Track;
+	lang: Lang;
+	delay?: number;
+}
+
+const { track, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<!-- On phones the player lives in the header (mini player), so this tile is desktop only. -->
+<Tile cols={2} delay={delay} animate="enter-fast" class="now-playing-tile" aria-label={t('music.player')}>
+	<NowPlaying track={track} lang={lang} />
+</Tile>
+
+<style>
+	.now-playing-tile {
+		display: flex;
+		align-items: center;
+		padding: var(--space-7);
+		overflow: hidden;
+	}
+
+	@media (max-width: 760px) {
+		.now-playing-tile {
+			display: none;
+		}
+	}
+</style>

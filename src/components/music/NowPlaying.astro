@@ -1,0 +1,425 @@
+---
+import type { Track } from '../../lib/live';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+/**
+ * Music player card. It always renders "stopped" (no autoplay); the play button switches every
+ * player on the page to "now playing" through src/scripts/music.ts.
+ * Without an audio source there is nothing to play, so the button and seek bar are disabled.
+ * `size="large"` is the homepage tile, `size="compact"` the phone player panel.
+ */
+interface Props {
+	track: Track;
+	lang: Lang;
+	size?: 'large' | 'compact';
+}
+
+const { track, lang, size = 'large' } = Astro.props;
+const t = useTranslations(lang);
+const playable = Boolean(track.audioUrl);
+const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
+---
+
+<div
+	class:list={['now-playing', `size-${size}`]}
+	data-now-playing
+	data-state="stopped"
+	data-duration={track.durationMs}
+	data-audio-src={track.audioUrl}
+>
+	<div class="disc" aria-hidden="true">
+		<div class="label">
+			{track.artworkUrl ? <img src={track.artworkUrl} alt="" loading="lazy" /> : <span class="hole" />}
+		</div>
+	</div>
+	<div class="info">
+		<div class="status-row">
+			<p class="status mono">
+				<span class="dot"></span>
+				<span data-player-status data-label-stopped={t('music.stopped')} data-label-playing={t('music.nowPlaying')}>
+					{t('music.stopped')}
+				</span>
+			</p>
+			<span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+		</div>
+		<p class="title display">{track.title}</p>
+		<p class="meta">{[track.artist, track.album].filter(Boolean).join(' · ')}</p>
+		<div class="controls">
+			<button
+				type="button"
+				class="control"
+				data-player-toggle-playback
+				disabled={!playable}
+				aria-pressed="false"
+				aria-label={t('music.play')}
+				data-label-play={t('music.play')}
+				data-label-pause={t('music.pause')}
+			>
+				<svg class="icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+					<path d="M7 4.5v15l13-7.5z" />
+				</svg>
+				<svg class="icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+					<rect x="6" y="5" width="4" height="14" rx="1" />
+					<rect x="14" y="5" width="4" height="14" rx="1" />
+				</svg>
+			</button>
+			<div class="seek" data-player-seek-wrap>
+				<input
+					type="range"
+					class="seek-input"
+					data-player-seek
+					min="0"
+					max={track.durationMs ?? 0}
+					step="1000"
+					value="0"
+					disabled={!playable}
+					aria-label={t('music.seek')}
+					aria-valuetext={`0:00 / ${formatTime(track.durationMs ?? 0)}`}
+				/>
+				<span class="seek-tip mono" data-player-seek-tip aria-hidden="true">0:00</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	import '../../scripts/music';
+</script>
+
+<style>
+	.now-playing {
+		display: flex;
+		align-items: center;
+		gap: var(--space-6);
+		width: 100%;
+		min-width: 0;
+	}
+
+	.disc {
+		flex: none;
+		width: 140px;
+		height: 140px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: repeating-radial-gradient(circle, var(--color-groove-light) 0 2px, var(--color-groove-dark) 2px 5px);
+		box-shadow: 0 0 0 1px var(--color-border-raised);
+		animation: spin 5s linear infinite;
+	}
+
+	.label {
+		width: 37%;
+		height: 37%;
+		overflow: hidden;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: conic-gradient(
+			var(--color-lime) 0 25%,
+			var(--color-periwinkle) 0 50%,
+			var(--color-coral) 0 75%,
+			var(--color-mint) 0
+		);
+	}
+
+	.label img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.hole {
+		width: 16%;
+		height: 16%;
+		border-radius: 50%;
+		background: var(--color-ink);
+	}
+
+	.info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.status-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.status {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		font-size: var(--text-xs);
+		color: var(--color-lime);
+		white-space: nowrap;
+		transition: color 0.3s;
+	}
+
+	.dot {
+		flex: none;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: currentColor;
+		animation: pulse-ring 1.6s ease-out infinite;
+	}
+
+	.equalizer {
+		display: flex;
+		align-items: flex-end;
+		gap: 3px;
+		height: 24px;
+	}
+
+	.equalizer i {
+		width: 4px;
+		height: 20%;
+		border-radius: 2px;
+		background: var(--color-lime);
+		animation: equalizer 1.1s ease-in-out infinite;
+		transition: background-color 0.3s;
+	}
+
+	.equalizer i:nth-child(2) {
+		animation-delay: 0.25s;
+	}
+	.equalizer i:nth-child(3) {
+		animation-delay: 0.5s;
+	}
+	.equalizer i:nth-child(4) {
+		animation-delay: 0.12s;
+	}
+	.equalizer i:nth-child(5) {
+		animation-delay: 0.38s;
+	}
+
+	.title {
+		margin-top: var(--space-3);
+		font-size: var(--text-xl);
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.meta {
+		margin-top: var(--space-1);
+		color: var(--color-text-muted);
+	}
+
+	.controls {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin-top: 18px;
+	}
+
+	.control {
+		flex: none;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-text);
+		color: var(--color-ink);
+		transition: transform var(--duration-fast);
+	}
+
+	.control:disabled {
+		background: var(--color-control);
+		color: var(--color-text-faint);
+		cursor: not-allowed;
+	}
+
+	.control:enabled:hover {
+		transform: scale(1.06);
+	}
+
+	.control:enabled:active {
+		transform: scale(0.94);
+	}
+
+	/* Seek bar: a range input drawn as the prototype's thin bar, with a thumb on hover. */
+	.seek {
+		position: relative;
+		flex: 1;
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
+	.seek-input {
+		--progress: 0%;
+		width: 100%;
+		height: 20px;
+		margin: 0;
+		background: transparent;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.seek-input:disabled {
+		cursor: default;
+	}
+
+	.seek-input::-webkit-slider-runnable-track {
+		height: 4px;
+		border-radius: 2px;
+		background: linear-gradient(to right, var(--color-text) var(--progress), var(--color-border-raised) var(--progress));
+	}
+
+	.seek-input::-moz-range-track {
+		height: 4px;
+		border-radius: 2px;
+		background: linear-gradient(to right, var(--color-text) var(--progress), var(--color-border-raised) var(--progress));
+	}
+
+	.seek-input::-webkit-slider-thumb {
+		width: 12px;
+		height: 12px;
+		margin-top: -4px;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-text);
+		transform: scale(0);
+		transition: transform 0.15s var(--ease-out);
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.seek-input::-moz-range-thumb {
+		width: 12px;
+		height: 12px;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-text);
+		transform: scale(0);
+		transition: transform 0.15s var(--ease-out);
+	}
+
+	.seek:hover .seek-input:enabled::-webkit-slider-thumb,
+	.seek-input:focus-visible::-webkit-slider-thumb,
+	.seek.is-seeking .seek-input::-webkit-slider-thumb {
+		transform: scale(1);
+	}
+
+	.seek:hover .seek-input:enabled::-moz-range-thumb,
+	.seek-input:focus-visible::-moz-range-thumb,
+	.seek.is-seeking .seek-input::-moz-range-thumb {
+		transform: scale(1);
+	}
+
+	.seek-input:focus-visible {
+		outline: none;
+	}
+
+	.seek:has(.seek-input:focus-visible) {
+		border-radius: 4px;
+		outline: 2px solid var(--color-lime);
+		outline-offset: 4px;
+	}
+
+	/* Time under the pointer, shown while hovering or dragging. */
+	.seek-tip {
+		position: absolute;
+		bottom: calc(100% + 4px);
+		left: var(--tip-x, 0px);
+		padding: 3px 8px;
+		border-radius: var(--radius-xs);
+		background: var(--color-text);
+		color: var(--color-ink);
+		font-size: var(--text-2xs);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		opacity: 0;
+		pointer-events: none;
+		transform: translateX(-50%) translateY(4px);
+		transition:
+			opacity 0.15s,
+			transform 0.15s var(--ease-out);
+	}
+
+	@media (hover: hover) {
+		.seek:hover:has(.seek-input:enabled) .seek-tip {
+			opacity: 1;
+			transform: translateX(-50%);
+		}
+	}
+
+	.seek.is-seeking .seek-tip {
+		opacity: 1;
+		transform: translateX(-50%);
+	}
+
+	/* Stopped: the record, dot and equalizer rest; the button offers play. */
+	[data-state='playing'] .icon-play,
+	[data-state='stopped'] .icon-pause {
+		display: none;
+	}
+
+	[data-state='stopped'] .status {
+		color: var(--color-text-muted);
+	}
+
+	[data-state='stopped'] :is(.disc, .equalizer i) {
+		animation-play-state: paused;
+	}
+
+	[data-state='stopped'] .dot {
+		animation: none;
+	}
+
+	[data-state='stopped'] .equalizer i {
+		background: var(--color-control-hover);
+	}
+
+	/* Compact (phone panel): disc and text side by side, controls on their own row below. */
+	.size-compact {
+		display: grid;
+		grid-template-columns: 88px minmax(0, 1fr);
+		align-items: center;
+		column-gap: var(--space-4);
+	}
+
+	.size-compact .disc {
+		grid-row: 1 / span 3;
+		width: 88px;
+		height: 88px;
+	}
+
+	.size-compact .info {
+		display: contents;
+	}
+
+	.size-compact .controls {
+		grid-column: 1 / -1;
+		margin-top: 14px;
+	}
+
+	.size-compact .title {
+		margin-top: 6px;
+		font-size: var(--text-lg);
+	}
+
+	.size-compact .meta {
+		font-size: 0.875rem;
+	}
+
+	.size-compact .equalizer {
+		height: 18px;
+	}
+
+	.size-compact .equalizer i {
+		width: 3px;
+	}
+</style>

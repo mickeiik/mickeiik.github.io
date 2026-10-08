@@ -1,0 +1,205 @@
+---
+import Tile from '../ui/Tile.astro';
+import Prompt from '../ui/Prompt.astro';
+import Icon from '../ui/Icon.astro';
+import { postSlug, readingTime, type Post, type SeriesInfo } from '../../lib/posts';
+import { formatDate, localizePath, otherLang, useTranslations, type Lang } from '../../i18n/utils';
+
+/** Full-width colored header of an article: prompt, series, title, meta chips and tags. */
+interface Props {
+	post: Post;
+	lang: Lang;
+	series?: SeriesInfo;
+	/** URL of the translated article, if any. */
+	translationUrl?: string;
+}
+
+const { post, lang, series, translationUrl } = Astro.props;
+const t = useTranslations(lang);
+const { title, description, pubDate, updatedDate, tags } = post.data;
+const writingUrl = localizePath('/blog/', lang);
+const other = otherLang(lang);
+---
+
+<Tile tone="periwinkle" padding="lg" radius="xl" delay={0.05} animate="enter-fast" class="article-header">
+	<Prompt path={lang === 'fr' ? '~/articles' : '~/writing'} command="cat" args={`${postSlug(post)}.md`} tone="ink" />
+
+	{
+		series && post.data.series && (
+			<a class="series-chip" href={`${writingUrl}?series=${series.id}`}>
+				<Icon name="layers" size={15} strokeWidth={2} />
+				{t('post.partOf', { series: series.title, part: post.data.series.part, total: series.parts.length })}
+			</a>
+		)
+	}
+
+	<h1 class="display">{title}</h1>
+	<p class="description">{description}</p>
+
+	<div class="chips">
+		<span class="chip">
+			<Icon name="calendar" size={15} strokeWidth={2} />
+			<time datetime={pubDate.toISOString()}>{formatDate(pubDate, lang)}</time>
+		</span>
+		{
+			updatedDate && (
+				<span class="chip">
+					<time datetime={updatedDate.toISOString()}>{t('post.updated', { date: formatDate(updatedDate, lang) })}</time>
+				</span>
+			)
+		}
+		<span class="chip">
+			<Icon name="clock" size={15} strokeWidth={2} />
+			{t('post.minRead', { n: readingTime(post) })}
+		</span>
+		{
+			translationUrl && (
+				<a class="chip chip-ink" href={translationUrl} hreflang={other} lang={other}>
+					<Icon name="globe" size={15} strokeWidth={2} />
+					{t('post.otherLang')}
+				</a>
+			)
+		}
+	</div>
+
+	{
+		tags.length > 0 && (
+			<ul class="tags" aria-label={t('post.tags')}>
+				{tags.map((tag) => (
+					<li>
+						<a class="tag mono" href={`${writingUrl}?tag=${encodeURIComponent(tag)}`}>
+							#{tag}
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+</Tile>
+
+<style>
+	.article-header :global(.prompt) {
+		font-size: 0.875rem;
+	}
+
+	.series-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 36px;
+		margin-top: var(--space-6);
+		padding: 0 14px;
+		border-radius: var(--radius-pill);
+		background: var(--color-ink);
+		color: var(--color-text);
+		font-size: 0.875rem;
+		font-weight: 600;
+		transition: transform var(--duration-fast);
+	}
+
+	.series-chip :global(svg) {
+		color: var(--color-lime);
+	}
+
+	.series-chip:hover {
+		transform: translateY(-2px);
+		color: var(--color-text);
+	}
+
+	h1 {
+		max-width: 56rem;
+		margin-top: var(--space-5);
+		font-size: var(--text-hero);
+		line-height: 0.98;
+		letter-spacing: -0.05em;
+	}
+
+	.description {
+		max-width: 40rem;
+		margin-top: 22px;
+		font-size: 1.3125rem;
+		line-height: 1.45;
+		color: var(--color-on-periwinkle-soft);
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-8);
+	}
+
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 40px;
+		padding: 0 14px;
+		border-radius: var(--radius-pill);
+		background: rgb(11 12 15 / 10%);
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+
+	.chip-ink {
+		padding: 0 16px;
+		background: var(--color-ink);
+		color: var(--color-text);
+		font-weight: 600;
+		transition: transform var(--duration-fast);
+	}
+
+	.chip-ink:hover {
+		transform: translateY(-2px);
+		color: var(--color-text);
+	}
+
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: 14px;
+		padding: 0;
+		list-style: none;
+	}
+
+	.tag {
+		display: inline-flex;
+		align-items: center;
+		min-height: 36px;
+		padding: 0 14px;
+		border: 1px solid rgb(11 12 15 / 28%);
+		border-radius: var(--radius-pill);
+		font-size: var(--text-sm);
+		transition:
+			transform var(--duration-fast),
+			background-color var(--duration-fast);
+	}
+
+	.tag:hover {
+		transform: translateY(-2px);
+		background: rgb(11 12 15 / 12%);
+		color: var(--color-ink);
+	}
+
+	@media (max-width: 760px) {
+		h1 {
+			font-size: 2.375rem;
+			line-height: 1;
+		}
+
+		.description {
+			font-size: 1.125rem;
+		}
+
+		.chips {
+			margin-top: 22px;
+		}
+
+		.chip-ink {
+			justify-content: center;
+			width: 100%;
+			min-height: var(--tap-target);
+		}
+	}
+</style>

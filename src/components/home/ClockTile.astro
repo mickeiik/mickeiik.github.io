@@ -1,0 +1,75 @@
+---
+import Tile from '../ui/Tile.astro';
+import { site } from '../../data/site';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+/** Live local time in France. Rendered at build time, then kept current by src/scripts/clock.ts. */
+interface Props {
+	lang: Lang;
+	delay?: number;
+}
+
+const { lang, delay } = Astro.props;
+const t = useTranslations(lang);
+const [hours, minutes] = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: site.timeZone })
+	.format(new Date())
+	.split(':');
+---
+
+<Tile tone="lime" delay={delay} animate="enter-fast" class="clock" aria-label={t('home.localTime')}>
+	<p class="mono command">$ date</p>
+	<div>
+		<p class="time display" data-clock data-time-zone={site.timeZone}>
+			<span data-hours>{hours}</span><span class="colon">:</span><span data-minutes>{minutes}</span>
+		</p>
+		<p class="zone">{t('home.timezone')}</p>
+	</div>
+</Tile>
+
+<script>
+	import '../../scripts/clock';
+</script>
+
+<style>
+	.clock {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--space-4);
+	}
+
+	.command {
+		font-size: var(--text-xs);
+	}
+
+	.time {
+		font-size: 3.5rem;
+		line-height: 1;
+		letter-spacing: -0.04em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.colon {
+		animation: blink 1s steps(1) infinite;
+	}
+
+	.zone {
+		margin-top: 6px;
+		font-weight: 600;
+	}
+
+	@media (max-width: 760px) {
+		.clock {
+			min-height: 150px;
+			padding: 18px;
+		}
+
+		.time {
+			font-size: 2.375rem;
+		}
+
+		.zone {
+			font-size: 0.875rem;
+		}
+	}
+</style>

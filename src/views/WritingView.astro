@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WritingHero from '../components/blog/WritingHero.astro';
+import TagFilter from '../components/blog/TagFilter.astro';
+import SeriesCard from '../components/blog/SeriesCard.astro';
+import PostCard from '../components/blog/PostCard.astro';
+import Button from '../components/ui/Button.astro';
+import { getPosts, getSeries, uniqueTags } from '../lib/posts';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+const allSeries = getSeries(posts, lang);
+const years = [...new Set(posts.map((post) => post.data.pubDate.getFullYear()))];
+let order = 0;
+---
+
+<BaseLayout lang={lang} title={t('writing.title')} nav="writing" page="writing">
+	<WritingHero lang={lang} />
+
+	<div class="layout" data-writing data-count-template={t('writing.count')} data-total={posts.length}>
+		<aside class="filters">
+			<TagFilter tags={uniqueTags(posts)} total={posts.length} lang={lang} />
+			{allSeries.map((series, i) => <SeriesCard series={series} lang={lang} delay={0.19 + i * 0.07} />)}
+		</aside>
+
+		<div class="results">
+			<div class="toolbar enter-fast" style="--delay: 0.1s">
+				<p role="status" class="mono count" data-count>{t('writing.count', { n: posts.length, total: posts.length })}</p>
+				<button type="button" class="clear mono" data-clear hidden>{t('writing.clear')}</button>
+			</div>
+
+			{
+				years.map((year) => (
+					<section class="year" data-year-group>
+						<h2 class="display year-title">{year}</h2>
+						<ol class="posts">
+							{posts
+								.filter((post) => post.data.pubDate.getFullYear() === year)
+								.map((post) => (
+									<PostCard post={post} lang={lang} delay={0.12 + 0.07 * order++} />
+								))}
+						</ol>
+					</section>
+				))
+			}
+
+			<div class="empty pop-in" data-empty hidden>
+				<p class="mono">{t('writing.noMatch')}</p>
+				<p>{t('writing.noMatchText')}</p>
+				<Button variant="primary" data-clear>{t('writing.showAll')}</Button>
+			</div>
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	import '../scripts/writing';
+</script>
+
+<style>
+	.layout {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: var(--grid-gap);
+		margin-top: var(--grid-gap);
+	}
+
+	.filters {
+		display: flex;
+		flex: 1 1 280px;
+		flex-direction: column;
+		gap: var(--grid-gap);
+		min-width: 0;
+	}
+
+	.results {
+		flex: 999 1 560px;
+		min-width: 0;
+	}
+
+	.toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-3);
+		min-height: 36px;
+		padding: 0 var(--space-2) var(--space-2);
+	}
+
+	.count {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.clear {
+		min-height: 36px;
+		padding: 0 14px;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-pill);
+		background: transparent;
+		font-size: var(--text-sm);
+	}
+
+	.year + .year {
+		margin-top: var(--space-8);
+	}
+
+	.year-title {
+		padding: 0 var(--space-2) var(--space-4);
+		font-size: var(--text-xl);
+	}
+
+	.posts {
+		display: flex;
+		flex-direction: column;
+		gap: var(--grid-gap);
+		padding: 0;
+		list-style: none;
+	}
+
+	.empty {
+		padding: var(--space-12) var(--space-7);
+		border: 1px dashed var(--color-border-strong);
+		border-radius: var(--radius-2xl);
+		text-align: center;
+	}
+
+	.empty .mono {
+		font-size: 0.875rem;
+		color: var(--color-coral);
+	}
+
+	.empty p + p {
+		margin: var(--space-2) 0 var(--space-5);
+		color: var(--color-text-soft);
+	}
+
+	@media (max-width: 760px) {
+		.layout {
+			margin-top: var(--space-3);
+		}
+
+		.toolbar {
+			justify-content: flex-end;
+		}
+	}
+</style>

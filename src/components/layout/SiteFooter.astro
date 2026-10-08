@@ -1,0 +1,27 @@
+---
+import { site } from '../../data/site';
+import type { Lang } from '../../i18n/utils';
+
+interface Props {
+	lang: Lang;
+}
+---
+
+<footer class="site-footer page mono">
+	<p>© {new Date().getFullYear()} {site.title}</p>
+	<p aria-hidden="true">exit 0</p>
+</footer>
+
+<style>
+	.site-footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3) var(--space-6);
+		margin-top: var(--space-10);
+		padding-bottom: var(--space-10);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+</style>

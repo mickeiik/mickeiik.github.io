@@ -1,0 +1,113 @@
+---
+import Tile from '../ui/Tile.astro';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	tags: [string, number][];
+	total: number;
+	lang: Lang;
+}
+
+const { tags, total, lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile delay={0.12} animate="enter-fast" class="tag-filter" aria-labelledby="tag-filter-title">
+	<h2 id="tag-filter-title" class="mono title">{t('writing.filterTag')}</h2>
+	<div class="chips" role="group" aria-labelledby="tag-filter-title">
+		<button type="button" class="chip mono" data-filter-tag="all" aria-pressed="true">
+			{t('writing.all')}<span>{total}</span>
+		</button>
+		{
+			tags.map(([tag, count]) => (
+				<button type="button" class="chip mono" data-filter-tag={tag} aria-pressed="false">
+					#{tag}
+					<span>{count}</span>
+				</button>
+			))
+		}
+	</div>
+</Tile>
+
+<style>
+	.title {
+		margin-bottom: 14px;
+		font-size: var(--text-xs);
+		font-weight: 500;
+		color: var(--color-periwinkle);
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 36px;
+		padding: 0 14px;
+		border: 0;
+		border-radius: var(--radius-pill);
+		background: var(--color-control);
+		color: var(--color-text);
+		font-size: var(--text-sm);
+		transition:
+			transform var(--duration-fast),
+			background-color var(--duration-fast),
+			color var(--duration-fast);
+	}
+
+	.chip span {
+		opacity: 0.6;
+	}
+
+	.chip:hover {
+		transform: translateY(-2px);
+	}
+
+	.chip[aria-pressed='true'] {
+		background: var(--color-lime);
+		color: var(--color-ink);
+	}
+
+	/* On phones the filter becomes a sideways-scrolling row of chips. */
+	@media (max-width: 760px) {
+		.tag-filter {
+			padding: 0;
+			border: 0;
+			background: none;
+		}
+
+		.title {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+		}
+
+		.chips {
+			flex-wrap: nowrap;
+			margin-inline: calc(var(--page-gutter) * -1);
+			padding-inline: var(--page-gutter);
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+
+		.chips::-webkit-scrollbar {
+			display: none;
+		}
+
+		.chip {
+			flex: none;
+			min-height: 40px;
+		}
+
+		.chip:not([aria-pressed='true']) {
+			background: var(--color-surface);
+		}
+	}
+</style>

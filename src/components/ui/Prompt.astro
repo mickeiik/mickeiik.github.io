@@ -1,0 +1,68 @@
+---
+/**
+ * A terminal prompt line: `~/path $ command` with the command typed out and a blinking cursor.
+ * `tone="dark"` is for dark surfaces, `tone="ink"` for accent fills.
+ */
+interface Props {
+	path: string;
+	command: string;
+	/** Extra text after the typed command, e.g. a file name. */
+	args?: string;
+	tone?: 'dark' | 'ink';
+	class?: string;
+}
+
+const { path, command, args, tone = 'dark', class: className } = Astro.props;
+---
+
+<p class:list={['prompt mono', `tone-${tone}`, className]}>
+	<span class="path">{path}</span> $ <span class="typed" style={`--chars: ${command.length}`}>{command}</span
+	>{args && ` ${args}`}<span class="cursor" aria-hidden="true"></span>
+</p>
+
+<style>
+	.prompt {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.path {
+		color: var(--color-lime);
+	}
+
+	.typed {
+		display: inline-block;
+		overflow: hidden;
+		white-space: nowrap;
+		vertical-align: bottom;
+		width: calc(var(--chars) * 1ch);
+		color: var(--color-text);
+		animation: typing calc(var(--chars) * 0.15s) steps(var(--chars)) 0.4s backwards;
+	}
+
+	.cursor {
+		display: inline-block;
+		width: 0.6em;
+		height: 1.15em;
+		margin-left: 3px;
+		vertical-align: -0.2em;
+		background: var(--color-lime);
+		animation: blink 1s steps(1) infinite;
+	}
+
+	.tone-ink {
+		color: var(--color-on-periwinkle-soft);
+	}
+
+	.tone-ink .path {
+		color: inherit;
+	}
+
+	.tone-ink .typed {
+		color: var(--color-ink);
+	}
+
+	.tone-ink .cursor {
+		background: var(--color-ink);
+	}
+</style>

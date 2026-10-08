@@ -1,0 +1,130 @@
+---
+import Tile from '../ui/Tile.astro';
+import { ACTIVITY_DAYS, type Activity } from '../../lib/github';
+import { site } from '../../data/site';
+import { formatDate, useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	activity: Activity;
+	lang: Lang;
+	delay?: number;
+}
+
+const { activity, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+
+/**
+ * Two windows, both ending today: 30 x 3 days on wide screens, the last 15 x 4 on phones.
+ * Cells read left to right, top to bottom, so the newest day is bottom right.
+ */
+const WIDE_COLS = 30;
+const NARROW_COLS = 15;
+const NARROW_DAYS = 60;
+
+const levels = ['--color-groove-light', '--color-activity-1', '--color-activity-2', '--color-activity-3', '--color-lime'].map((token) => `var(${token})`);
+const days = activity.days.slice(-ACTIVITY_DAYS);
+const sum = (list: typeof days) => list.reduce((total, day) => total + day.count, 0);
+const totals = { wide: sum(days), narrow: sum(days.slice(-NARROW_DAYS)) };
+
+const cells = days.map((day, i) => ({
+	color: levels[day.level],
+	title: t('home.githubDay', { date: formatDate(new Date(`${day.date}T12:00:00`), lang), n: day.count }),
+	// The wave runs across columns, which differ between the two layouts.
+	wide: ((i % WIDE_COLS) * 0.09).toFixed(2),
+	narrow: ((i % NARROW_COLS) * 0.18).toFixed(2),
+}));
+---
+
+<Tile href={site.social.github} cols={2} delay={delay} animate="enter-fast" class="github">
+	<span class="sr-only wide-only">{t('home.githubSummary', { n: totals.wide, range: t('home.githubWide') })}</span>
+	<span class="sr-only narrow-only">{t('home.githubSummary', { n: totals.narrow, range: t('home.githubNarrow') })}</span>
+	<div class="head" aria-hidden="true">
+		<p class="mono command">
+			<span class="wide-only">git log --since=3.months</span>
+			<span class="narrow-only">git log --since=2.months</span>
+		</p>
+		<p class="total">
+			<span class="wide-only">{totals.wide} {t('home.contributions')}</span>
+			<span class="narrow-only">{totals.narrow} {t('home.contributions')}</span>
+		</p>
+	</div>
+	<div class="cells" aria-hidden="true">
+		{cells.map((cell) => <span title={cell.title} style={`background: ${cell.color}; --wave-wide: ${cell.wide}s; --wave-narrow: ${cell.narrow}s`} />)}
+	</div>
+</Tile>
+
+<style>
+	.github {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--space-4);
+	}
+
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.command,
+	.total {
+		white-space: nowrap;
+	}
+
+	.command {
+		font-size: var(--text-xs);
+		color: var(--color-mint);
+	}
+
+	.total {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	.cells {
+		display: grid;
+		grid-template-columns: repeat(30, minmax(0, 1fr));
+		gap: 4px;
+	}
+
+	.cells span {
+		aspect-ratio: 1;
+		border-radius: 3px;
+		animation: wave 2.8s ease-in-out infinite;
+		animation-delay: var(--wave-wide);
+	}
+
+	.narrow-only {
+		display: none;
+	}
+
+	@media (max-width: 760px) {
+		.github {
+			padding: 18px;
+		}
+
+		.wide-only {
+			display: none;
+		}
+
+		.narrow-only {
+			display: inline;
+		}
+
+		.cells {
+			grid-template-columns: repeat(15, minmax(0, 1fr));
+		}
+
+		.cells span {
+			animation-delay: var(--wave-narrow);
+		}
+
+		/* Phones show the most recent 60 days: drop the oldest 30. */
+		.cells span:nth-child(-n + 30) {
+			display: none;
+		}
+	}
+</style>

@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Tile from '../components/ui/Tile.astro';
+import Icon from '../components/ui/Icon.astro';
+import LostBranch from '../components/notfound/LostBranch.astro';
+import { site } from '../data/site';
+import { localizePath, useTranslations } from '../i18n/utils';
+
+// GitHub Pages serves a single 404 page for every language, so it is written in English.
+const lang = 'en';
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang} title={t('notFound.title')} page="not-found" alternateUrl={localizePath('/', 'fr')}>
+	<div class="layout">
+		<Tile padding="lg" radius="xl" delay={0.05} animate="enter-fast" class="message">
+			<LostBranch hereLabel={t('notFound.here')} />
+			<div class="copy">
+				<p class="mono command">~/{site.handle} $ git checkout <span data-missing-path>./this-page</span></p>
+				<p class="mono error" data-missing-error data-template={t('notFound.error')}>
+					{t('notFound.error', { path: './this-page' })}
+				</p>
+				<h1 class="display" aria-label="404">
+					<span>4</span><span class="zero">0</span><span>4</span>
+				</h1>
+				<p class="text">{t('notFound.text')}</p>
+			</div>
+		</Tile>
+
+		<div class="actions">
+			<Tile href={localizePath('/', lang)} tone="lime" delay={0.15} animate="enter-fast" class="action">
+				<span><span class="mono">$ cd ~</span><span class="display">{t('notFound.home')}</span></span>
+				<Icon name="arrow-up-right" size={26} strokeWidth={2} class="tile-arrow" />
+			</Tile>
+			<Tile href={localizePath('/blog/', lang)} tone="periwinkle" delay={0.22} animate="enter-fast" class="action">
+				<span><span class="mono">$ ls ./writing</span><span class="display">{t('notFound.writing')}</span></span>
+				<Icon name="arrow-up-right" size={26} strokeWidth={2} class="tile-arrow" />
+			</Tile>
+			<Tile as="form" padding="sm" delay={0.29} animate="enter-fast" action={localizePath('/blog/', lang)} method="get">
+				<label for="lost-query" class="mono search-label">{t('notFound.search')}</label>
+				<div class="search">
+					<input id="lost-query" class="mono" type="search" name="q" placeholder="grep..." />
+					<button type="submit" aria-label={t('writing.search')}><Icon name="search" size={18} strokeWidth={2} /></button>
+				</div>
+			</Tile>
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	// Show the path the visitor actually asked for.
+	document.addEventListener('astro:page-load', () => {
+		let path = `.${location.pathname}`;
+		try {
+			path = `.${decodeURIComponent(location.pathname)}`;
+		} catch {
+			// Malformed percent-encoding: show the raw path.
+		}
+		document.querySelectorAll('[data-missing-path]').forEach((el) => (el.textContent = path));
+		document.querySelectorAll<HTMLElement>('[data-missing-error]').forEach((el) => {
+			el.textContent = (el.dataset.template ?? '').replace('{path}', path);
+		});
+	});
+</script>
+
+<style>
+	.layout {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--grid-gap);
+	}
+
+	.layout :global(.message) {
+		display: flex;
+		flex: 999 1 600px;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-10);
+		min-width: 0;
+	}
+
+	.copy {
+		flex: 1 1 300px;
+		min-width: 0;
+	}
+
+	.command {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	.error {
+		margin-top: 4px;
+		font-size: 0.875rem;
+		color: var(--color-coral);
+		overflow-wrap: anywhere;
+	}
+
+	h1 {
+		margin-top: var(--space-5);
+		font-size: clamp(5.5rem, 12vw, 9.5rem);
+		line-height: 0.9;
+		letter-spacing: -0.06em;
+	}
+
+	h1 span {
+		display: inline-block;
+		animation: bounce-digit 2.6s var(--ease-pop) infinite;
+	}
+
+	h1 span:nth-child(2) {
+		animation-delay: 0.12s;
+	}
+
+	h1 span:nth-child(3) {
+		animation-delay: 0.24s;
+	}
+
+	.zero {
+		color: var(--color-coral);
+	}
+
+	@keyframes bounce-digit {
+		0%,
+		70%,
+		100% {
+			transform: none;
+		}
+		80% {
+			transform: translateY(-16px) rotate(-5deg);
+		}
+		90% {
+			transform: translateY(2px);
+		}
+	}
+
+	.text {
+		max-width: 28rem;
+		margin-top: 18px;
+		font-size: var(--text-md);
+		color: var(--color-text-soft);
+	}
+
+	.actions {
+		display: flex;
+		flex: 1 1 300px;
+		flex-direction: column;
+		gap: var(--grid-gap);
+		min-width: 0;
+	}
+
+	.actions :global(.action) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.actions :global(.action) .mono {
+		display: block;
+		font-size: var(--text-xs);
+	}
+
+	.actions :global(.action) .display {
+		display: block;
+		font-size: 1.625rem;
+	}
+
+	.search-label {
+		display: block;
+		margin-bottom: 10px;
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.search {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	input {
+		flex: 1;
+		min-width: 0;
+		height: var(--tap-target);
+		padding: 0 16px;
+		border: 1px solid var(--color-border-dashed);
+		border-radius: var(--radius-pill);
+		background: var(--color-bg);
+		font-size: 0.875rem;
+	}
+
+	.search button {
+		flex: none;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-text);
+		color: var(--color-ink);
+	}
+
+	@media (max-width: 760px) {
+		.layout :global(.message) {
+			gap: var(--space-6);
+			text-align: center;
+		}
+
+		h1 {
+			font-size: 6rem;
+		}
+
+		.text {
+			font-size: 1.0625rem;
+		}
+	}
+</style>

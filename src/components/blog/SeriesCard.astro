@@ -1,0 +1,83 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import type { SeriesInfo } from '../../lib/posts';
+import { useTranslations, type Lang } from '../../i18n/utils';
+
+/** Series card on the Writing page, with a toggle that filters the list to that series. */
+interface Props {
+	series: SeriesInfo;
+	lang: Lang;
+	delay?: number;
+}
+
+const { series, lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile tone="periwinkle" delay={delay} animate="enter-fast" class="series-card" aria-labelledby={`series-${series.id}`}>
+	<p class="mono count">{t('writing.seriesParts', { n: series.parts.length })}</p>
+	<h2 id={`series-${series.id}`} class="display">{series.title}</h2>
+	<p class="description">{series.description}</p>
+	<button
+		type="button"
+		class="toggle"
+		data-filter-series={series.id}
+		aria-pressed="false"
+		data-label-off={t('writing.seriesOnly')}
+		data-label-on={t('writing.seriesOnlyActive')}
+	>
+		<Icon name="layers" size={15} strokeWidth={2} />
+		<span data-label>{t('writing.seriesOnly')}</span>
+	</button>
+</Tile>
+
+<style>
+	.count {
+		font-size: var(--text-xs);
+		color: var(--color-on-periwinkle-soft);
+	}
+
+	h2 {
+		margin-top: var(--space-2);
+		font-size: var(--text-xl);
+		line-height: 1.05;
+	}
+
+	.description {
+		margin-top: var(--space-2);
+		font-size: 0.9375rem;
+		color: var(--color-on-periwinkle-soft);
+	}
+
+	.toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		margin-top: 18px;
+		padding: 0 18px;
+		border: 0;
+		border-radius: var(--radius-pill);
+		background: var(--color-ink);
+		color: var(--color-text);
+		font-size: 0.875rem;
+		font-weight: 600;
+		transition: transform var(--duration-fast);
+	}
+
+	.toggle :global(svg) {
+		color: var(--color-lime);
+	}
+
+	.toggle:hover {
+		transform: translateY(-2px);
+	}
+
+	@media (max-width: 760px) {
+		.toggle {
+			width: 100%;
+		}
+	}
+</style>

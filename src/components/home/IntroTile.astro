@@ -1,0 +1,83 @@
+---
+import Tile from '../ui/Tile.astro';
+import Prompt from '../ui/Prompt.astro';
+import Button from '../ui/Button.astro';
+import { site } from '../../data/site';
+import { localizePath, useTranslations, type Lang } from '../../i18n/utils';
+
+interface Props {
+	lang: Lang;
+	delay?: number;
+}
+
+const { lang, delay } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<Tile cols={2} rows={2} padding="none" delay={delay} animate="enter-fast" class="intro">
+	<Prompt path={`~/${site.handle}`} command="whoami" />
+	<div>
+		<h1 class="display">{site.title}</h1>
+		<p class="tagline">{t('home.tagline')}</p>
+		<div class="actions">
+			<Button href={localizePath('/blog/', lang)} variant="primary" icon="book">{t('home.readBlog')}</Button>
+			<Button href={site.social.github} icon="github" rel="me">GitHub</Button>
+			<Button href={site.social.linkedin} icon="linkedin" rel="me">LinkedIn</Button>
+		</div>
+	</div>
+</Tile>
+
+<style>
+	.intro {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--space-8);
+		padding: var(--space-9);
+	}
+
+	h1 {
+		font-size: var(--text-display);
+		line-height: 0.98;
+		letter-spacing: var(--tracking-tighter);
+	}
+
+	.tagline {
+		max-width: 30rem;
+		margin-top: 18px;
+		font-size: var(--text-md);
+		line-height: 1.5;
+		color: var(--color-text-soft);
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-top: var(--space-7);
+	}
+
+	@media (max-width: 760px) {
+		.intro {
+			padding: var(--space-6);
+		}
+
+		h1 {
+			font-size: 2.875rem;
+		}
+
+		.tagline {
+			font-size: 1.0625rem;
+		}
+
+		.actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-2);
+		}
+
+		.actions > :first-child {
+			grid-column: 1 / -1;
+		}
+	}
+</style>

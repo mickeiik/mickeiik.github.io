@@ -1,0 +1,152 @@
+---
+import '../styles/prose.css';
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Tile from '../components/ui/Tile.astro';
+import ArticleHeader from '../components/blog/ArticleHeader.astro';
+import TableOfContents from '../components/blog/TableOfContents.astro';
+import SeriesNav from '../components/blog/SeriesNav.astro';
+import AiNote from '../components/blog/AiNote.astro';
+import Soundtrack from '../components/blog/Soundtrack.astro';
+import NextPost from '../components/blog/NextPost.astro';
+import { getPosts, getSeries, getTranslation, postUrl, type Post } from '../lib/posts';
+import { localizePath, otherLang, useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+	post: Post;
+	lang: Lang;
+}
+
+const { post, lang } = Astro.props;
+const t = useTranslations(lang);
+const { Content, headings } = await render(post);
+
+const posts = await getPosts(lang);
+const series = post.data.series && getSeries(posts, lang).find((s) => s.id === post.data.series!.id);
+const translation = await getTranslation(post, otherLang(lang));
+
+// Read next: the next part of the series, otherwise the previous (older) post.
+const seriesNext = series?.parts[series.parts.findIndex((part) => part.id === post.id) + 1];
+const index = posts.findIndex((p) => p.id === post.id);
+const older = posts[index + 1];
+const newer = posts[index - 1];
+const next = seriesNext
+	? { post: seriesNext, label: `${t('post.next')} · ${t('post.part', { part: seriesNext.data.series!.part })}` }
+	: older
+		? { post: older, label: t('post.older') }
+		: newer && { post: newer, label: t('post.newer') };
+---
+
+<BaseLayout
+	lang={lang}
+	title={post.data.title}
+	description={post.data.description}
+	nav="writing"
+	page="article"
+	alternateUrl={translation ? postUrl(translation) : localizePath('/blog/', otherLang(lang))}
+>
+	<ArticleHeader post={post} lang={lang} series={series} translationUrl={translation && postUrl(translation)} />
+
+	<div class="layout">
+		<Tile
+			as="article"
+			padding="lg"
+			radius="xl"
+			delay={0.15}
+			animate="enter-fast"
+			class="body prose"
+			data-copy-text={t('code.copy')}
+			data-copied-text={t('code.copied')}
+			data-copy-label={t('code.copyLabel')}
+		>
+			<Content />
+		</Tile>
+
+		<aside class="aside">
+			<div class="slot-toc"><TableOfContents headings={headings} lang={lang} delay={0.2} /></div>
+			{series && <div class="slot-series"><SeriesNav series={series} current={post} lang={lang} delay={0.27} /></div>}
+			{post.data.aiAssisted && <div class="slot-ai"><AiNote lang={lang} delay={0.34} /></div>}
+			{post.data.soundtrack && <div class="slot-soundtrack"><Soundtrack soundtrack={post.data.soundtrack} lang={lang} delay={0.41} /></div>}
+		</aside>
+	</div>
+
+	{next && <NextPost post={next.post} label={next.label} delay={0.5} />}
+</BaseLayout>
+
+<script>
+	import '../scripts/toc';
+	import '../scripts/code-copy';
+</script>
+
+<style>
+	.layout {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: var(--grid-gap);
+		margin-top: var(--grid-gap);
+	}
+
+	.layout :global(.body) {
+		flex: 999 1 560px;
+		min-width: 0;
+	}
+
+	/* The side panel follows the reader. */
+	.aside {
+		position: sticky;
+		top: var(--header-offset);
+		display: flex;
+		flex: 1 1 290px;
+		flex-direction: column;
+		gap: var(--grid-gap);
+		min-width: 0;
+		max-height: calc(100vh - var(--header-offset) - 16px);
+		overflow-y: auto;
+		scrollbar-width: none;
+	}
+
+	.aside::-webkit-scrollbar {
+		display: none;
+	}
+
+	.aside > :empty {
+		display: none;
+	}
+
+	/* On phones: AI note and contents first, then the article, then the series and soundtrack. */
+	@media (max-width: 760px) {
+		.layout {
+			flex-direction: column;
+			align-items: stretch;
+			gap: var(--space-3);
+			margin-top: var(--space-3);
+		}
+
+		.layout :global(.body) {
+			flex: none;
+			order: 3;
+			padding: 26px 22px;
+		}
+
+		.aside {
+			display: contents;
+		}
+
+		.slot-ai {
+			order: 1;
+		}
+
+		.slot-toc {
+			order: 2;
+		}
+
+		.slot-series {
+			order: 4;
+		}
+
+		.slot-soundtrack {
+			order: 5;
+		}
+	}
+</style>

@@ -1,0 +1,65 @@
+---
+import Tile from '../ui/Tile.astro';
+import Icon from '../ui/Icon.astro';
+import { postUrl, type Post } from '../../lib/posts';
+
+/** Large "read next" card at the end of an article. */
+interface Props {
+	post: Post;
+	label: string;
+	delay?: number;
+}
+
+const { post, label, delay } = Astro.props;
+---
+
+<Tile href={postUrl(post)} radius="xl" delay={delay} animate="enter-fast" class="next-post">
+	<span>
+		<span class="mono label">{label}</span>
+		<span class="display title">{post.data.title}</span>
+	</span>
+	<span class="arrow"><Icon name="arrow-right" size={22} strokeWidth={2} /></span>
+</Tile>
+
+<style>
+	.next-post {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		margin-top: var(--grid-gap);
+		padding: var(--space-8) clamp(var(--space-6), 5vw, var(--space-12));
+	}
+
+	.label {
+		display: block;
+		font-size: var(--text-sm);
+		color: var(--color-periwinkle);
+	}
+
+	.title {
+		display: block;
+		margin-top: 6px;
+		font-size: clamp(1.625rem, 3.6vw, 2.625rem);
+		line-height: 1.05;
+		letter-spacing: -0.035em;
+	}
+
+	.arrow {
+		flex: none;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-lime);
+		color: var(--color-ink);
+		transition: transform 0.25s var(--ease-out);
+	}
+
+	.next-post:hover .arrow {
+		transform: translateX(5px);
+	}
+</style>

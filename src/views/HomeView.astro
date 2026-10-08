@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BentoGrid from '../components/home/BentoGrid.astro';
+import IntroTile from '../components/home/IntroTile.astro';
+import NowPlayingTile from '../components/home/NowPlayingTile.astro';
+import PostTile from '../components/home/PostTile.astro';
+import ClockTile from '../components/home/ClockTile.astro';
+import BuildingTile from '../components/home/BuildingTile.astro';
+import ReadingTile from '../components/home/ReadingTile.astro';
+import GitHubTile from '../components/home/GitHubTile.astro';
+import ElsewhereTile from '../components/home/ElsewhereTile.astro';
+import AllWritingTile from '../components/home/AllWritingTile.astro';
+import { homeModules, homePostCount } from '../data/home';
+import { getPosts } from '../lib/posts';
+import { getReading, getTrack } from '../lib/live';
+import { getActivity } from '../lib/github';
+import type { Lang } from '../i18n/utils';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const [featured, ...recent] = (await getPosts(lang)).slice(0, homePostCount);
+const track = homeModules.music ? getTrack() : null;
+const book = homeModules.reading ? getReading() : null;
+const activity = homeModules.github ? await getActivity() : null;
+
+// Tiles enter one after another, in reading order.
+let order = 0;
+const next = () => 0.02 + 0.032 * order++;
+
+// The "All writing" bar fills whatever is left of the last row of the four-column grid.
+const cells =
+	4 + // intro (2 x 2)
+	(track ? 2 : 0) +
+	(featured ? 2 : 0) +
+	recent.length +
+	(homeModules.clock ? 1 : 0) +
+	(homeModules.building ? 1 : 0) +
+	(book ? 1 : 0) +
+	(activity ? 2 : 0) +
+	1; // elsewhere
+const remainder = cells % 4;
+const allWritingCols = remainder === 0 ? 'full' : ((4 - remainder) as 1 | 2 | 3);
+---
+
+<BaseLayout lang={lang} nav="home" page="home">
+	<BentoGrid>
+		<IntroTile lang={lang} delay={next()} />
+		{track && <NowPlayingTile track={track} lang={lang} delay={next()} />}
+		{featured && <PostTile post={featured} lang={lang} featured delay={next()} />}
+		{recent.map((post) => <PostTile post={post} lang={lang} delay={next()} />)}
+		{homeModules.clock && <ClockTile lang={lang} delay={next()} />}
+		{homeModules.building && <BuildingTile lang={lang} delay={next()} />}
+		{book && <ReadingTile book={book} lang={lang} delay={next()} />}
+		{activity && <GitHubTile activity={activity} lang={lang} delay={next()} />}
+		<ElsewhereTile lang={lang} delay={next()} />
+		<AllWritingTile lang={lang} cols={allWritingCols} delay={next()} />
+	</BentoGrid>
+</BaseLayout>
