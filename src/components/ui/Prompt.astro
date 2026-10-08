@@ -21,48 +21,53 @@ const { path, command, args, tone = 'dark', class: className } = Astro.props;
 </p>
 
 <style>
-	.prompt {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
+	/* Shared primitive: callers' own classes override it (see src/styles/global.css). */
+	@layer base, ui, utilities;
 
-	.path {
-		color: var(--color-lime);
-	}
+	@layer ui {
+		.prompt {
+			font-size: var(--text-sm);
+			color: var(--color-text-muted);
+		}
 
-	.typed {
-		display: inline-block;
-		overflow: hidden;
-		white-space: nowrap;
-		vertical-align: bottom;
-		width: calc(var(--chars) * 1ch);
-		color: var(--color-text);
-		animation: typing calc(var(--chars) * 0.15s) steps(var(--chars)) 0.4s backwards;
-	}
+		.path {
+			color: var(--color-lime);
+		}
 
-	.cursor {
-		display: inline-block;
-		width: 0.6em;
-		height: 1.15em;
-		margin-left: 3px;
-		vertical-align: -0.2em;
-		background: var(--color-lime);
-		animation: blink 1s steps(1) infinite;
-	}
+		.typed {
+			display: inline-block;
+			overflow: hidden;
+			white-space: nowrap;
+			vertical-align: bottom;
+			width: calc(var(--chars) * 1ch);
+			color: var(--color-text);
+			animation: typing calc(var(--chars) * 0.15s) steps(var(--chars)) 0.4s backwards;
+		}
 
-	.tone-ink {
-		color: var(--color-on-periwinkle-soft);
-	}
+		.cursor {
+			display: inline-block;
+			width: 0.6em;
+			height: 1.15em;
+			margin-left: 3px;
+			vertical-align: -0.2em;
+			background: var(--color-lime);
+			animation: blink 1s steps(1) infinite;
+		}
 
-	.tone-ink .path {
-		color: inherit;
-	}
+		.tone-ink {
+			color: var(--color-on-periwinkle-soft);
+		}
 
-	.tone-ink .typed {
-		color: var(--color-ink);
-	}
+		.tone-ink .path {
+			color: inherit;
+		}
 
-	.tone-ink .cursor {
-		background: var(--color-ink);
+		.tone-ink .typed {
+			color: var(--color-ink);
+		}
+
+		.tone-ink .cursor {
+			background: var(--color-ink);
+		}
 	}
 </style>

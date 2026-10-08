@@ -1,111 +1,121 @@
+/*
+ * Cascade layers keep styles independent of load order, which differs between dev, the first
+ * production load and client-side navigations. Order: base < ui < utilities < unlayered
+ * component styles, so a component's own class always wins over the shared primitives.
+ */
+@layer base, ui, utilities;
+
 @import './tokens.css';
 @import './motion.css';
-
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
-}
-
-* {
-	margin: 0;
-}
 
 /* Component display rules must never win over the hidden attribute. */
 [hidden] {
 	display: none !important;
 }
 
-html {
-	background: var(--color-bg);
-	-webkit-text-size-adjust: 100%;
-	/*
-	 * The page router restores the scroll position before web fonts load. With scroll anchoring on,
-	 * the font swap then nudges the page down and that position is saved, so each reload drifted further.
-	 */
-	overflow-anchor: none;
-}
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
 
-body {
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-	background: var(--color-bg);
-	color: var(--color-text);
-	font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-	font-size: var(--text-base);
-	line-height: var(--leading-body);
-	-webkit-font-smoothing: antialiased;
-}
+	* {
+		margin: 0;
+	}
 
-a {
-	color: inherit;
-	text-decoration: none;
-}
+	html {
+		background: var(--color-bg);
+		-webkit-text-size-adjust: 100%;
+		/*
+		 * The page router restores the scroll position before web fonts load. With scroll anchoring on,
+		 * the font swap then nudges the page down and that position is saved, so each reload drifted further.
+		 */
+		overflow-anchor: none;
+	}
 
-a:hover {
-	color: var(--color-lime);
-}
+	body {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		background: var(--color-bg);
+		color: var(--color-text);
+		font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+		font-size: var(--text-base);
+		line-height: var(--leading-body);
+		-webkit-font-smoothing: antialiased;
+	}
 
-img,
-svg {
-	display: block;
-	max-width: 100%;
-}
+	a {
+		color: inherit;
+		text-decoration: none;
+	}
 
-button,
-input {
-	font: inherit;
-	color: inherit;
-}
+	a:hover {
+		color: var(--color-lime);
+	}
 
-button {
-	cursor: pointer;
-}
+	img,
+	svg {
+		display: block;
+		max-width: 100%;
+	}
 
-:focus-visible {
-	outline: 2px solid var(--color-lime);
-	outline-offset: 3px;
-}
+	button,
+	input {
+		font: inherit;
+		color: inherit;
+	}
 
-::selection {
-	background: var(--color-lime);
-	color: var(--color-ink);
+	button {
+		cursor: pointer;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-lime);
+		outline-offset: 3px;
+	}
+
+	::selection {
+		background: var(--color-lime);
+		color: var(--color-ink);
+	}
 }
 
 /* Utilities */
+@layer utilities {
+	.mono {
+		font-family: var(--font-mono), ui-monospace, monospace;
+	}
 
-.mono {
-	font-family: var(--font-mono), ui-monospace, monospace;
-}
+	.display {
+		font-family: var(--font-display), sans-serif;
+		font-weight: 700;
+		letter-spacing: var(--tracking-tight);
+	}
 
-.display {
-	font-family: var(--font-display), sans-serif;
-	font-weight: 700;
-	letter-spacing: var(--tracking-tight);
-}
+	.page {
+		width: 100%;
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding-inline: var(--page-gutter);
+	}
 
-.page {
-	width: 100%;
-	max-width: var(--page-max);
-	margin: 0 auto;
-	padding-inline: var(--page-gutter);
-}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
 
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border: 0;
-}
-
-.stack {
-	display: flex;
-	flex-direction: column;
-	gap: var(--grid-gap);
+	.stack {
+		display: flex;
+		flex-direction: column;
+		gap: var(--grid-gap);
+	}
 }

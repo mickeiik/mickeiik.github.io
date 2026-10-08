@@ -66,121 +66,126 @@ const animation = animate === 'none' ? undefined : animate;
 </Tag>
 
 <style>
-	.tile {
-		display: block;
-		min-width: 0;
-		border: 1px solid transparent;
-		color: var(--color-text);
-	}
+	/* Shared primitive: callers' own classes override it (see src/styles/global.css). */
+	@layer base, ui, utilities;
 
-	.radius-lg {
-		border-radius: var(--radius-2xl);
-	}
+	@layer ui {
+		.tile {
+			display: block;
+			min-width: 0;
+			border: 1px solid transparent;
+			color: var(--color-text);
+		}
 
-	.radius-xl {
-		border-radius: var(--radius-3xl);
-	}
+		.radius-lg {
+			border-radius: var(--radius-2xl);
+		}
 
-	.pad-none {
-		padding: 0;
-	}
+		.radius-xl {
+			border-radius: var(--radius-3xl);
+		}
 
-	.pad-sm {
-		padding: var(--space-5);
-	}
+		.pad-none {
+			padding: 0;
+		}
 
-	.pad-md {
-		padding: var(--space-6);
-	}
+		.pad-sm {
+			padding: var(--space-5);
+		}
 
-	.pad-lg {
-		padding: clamp(var(--space-7), 5vw, var(--space-16));
-	}
+		.pad-md {
+			padding: var(--space-6);
+		}
 
-	.tone-surface {
-		background: var(--color-surface);
-		border-color: var(--color-border);
-	}
+		.pad-lg {
+			padding: clamp(var(--space-7), 5vw, var(--space-16));
+		}
 
-	.tone-lime {
-		background: var(--color-lime);
-		border-color: var(--color-lime);
-		color: var(--color-ink);
-	}
+		.tone-surface {
+			background: var(--color-surface);
+			border-color: var(--color-border);
+		}
 
-	.tone-periwinkle {
-		background: var(--color-periwinkle);
-		border-color: var(--color-periwinkle);
-		color: var(--color-ink);
-	}
+		.tone-lime {
+			background: var(--color-lime);
+			border-color: var(--color-lime);
+			color: var(--color-ink);
+		}
 
-	.tone-coral {
-		background: var(--color-coral);
-		border-color: var(--color-coral);
-		color: var(--color-ink);
-	}
+		.tone-periwinkle {
+			background: var(--color-periwinkle);
+			border-color: var(--color-periwinkle);
+			color: var(--color-ink);
+		}
 
-	.tone-light {
-		background: var(--color-text);
-		border-color: var(--color-text);
-		color: var(--color-ink);
-	}
+		.tone-coral {
+			background: var(--color-coral);
+			border-color: var(--color-coral);
+			color: var(--color-ink);
+		}
 
-	.cols-2 {
-		grid-column: span 2;
-	}
+		.tone-light {
+			background: var(--color-text);
+			border-color: var(--color-text);
+			color: var(--color-ink);
+		}
 
-	.cols-3 {
-		grid-column: span 3;
-	}
+		.cols-2 {
+			grid-column: span 2;
+		}
 
-	.cols-full {
-		grid-column: 1 / -1;
-	}
+		.cols-3 {
+			grid-column: span 3;
+		}
 
-	.rows-2 {
-		grid-row: span 2;
-	}
-
-	.is-link {
-		transition:
-			transform 0.25s var(--ease-out),
-			border-color 0.25s;
-	}
-
-	/* No color change on hover: each tone keeps its own text color (the global a:hover is lower specificity). */
-	.is-link:hover {
-		transform: translateY(-4px);
-	}
-
-	.tone-surface.is-link:hover {
-		border-color: var(--color-border-strong);
-	}
-
-	/* Arrows inside a linked tile nudge toward the destination. */
-	.is-link :global(.tile-arrow) {
-		transition: transform 0.25s var(--ease-out);
-	}
-
-	.is-link:hover :global(.tile-arrow) {
-		transform: translate(4px, -4px);
-	}
-
-	/* On phones the grid has two columns: wide tiles take the full row. */
-	@media (max-width: 760px) {
-		.cols-2,
-		.cols-3,
-		.cols-full,
-		.phone-full {
+		.cols-full {
 			grid-column: 1 / -1;
 		}
 
 		.rows-2 {
-			grid-row: auto;
+			grid-row: span 2;
 		}
 
-		.is-link:active {
-			transform: scale(0.98);
+		.is-link {
+			transition:
+				transform 0.25s var(--ease-out),
+				border-color 0.25s;
+		}
+
+		/* No color change on hover: each tone keeps its own text color (the global a:hover is lower specificity). */
+		.is-link:hover {
+			transform: translateY(-4px);
+		}
+
+		.tone-surface.is-link:hover {
+			border-color: var(--color-border-strong);
+		}
+
+		/* Arrows inside a linked tile nudge toward the destination. */
+		.is-link :global(.tile-arrow) {
+			transition: transform 0.25s var(--ease-out);
+		}
+
+		.is-link:hover :global(.tile-arrow) {
+			transform: translate(4px, -4px);
+		}
+
+		/* On phones the grid has two columns: wide tiles take the full row. */
+		@media (max-width: 760px) {
+			.cols-2,
+			.cols-3,
+			.cols-full,
+			.phone-full {
+				grid-column: 1 / -1;
+			}
+
+			.rows-2 {
+				grid-row: auto;
+			}
+
+			.is-link:active {
+				transform: scale(0.98);
+			}
 		}
 	}
 </style>

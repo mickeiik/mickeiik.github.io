@@ -35,6 +35,10 @@ const track = homeModules.music ? getTrack() : null;
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- Fixes the cascade layer order before any bundled stylesheet, whatever order they load in (src/styles/global.css). -->
+		<style is:inline>
+			@layer base, ui, utilities;
+		</style>
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<meta name="theme-color" content="#0b0c0f" />
