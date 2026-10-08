@@ -441,9 +441,16 @@ const other = otherLang(lang);
 		display: block;
 	}
 
+	/*
+	 * The timeline sits in its own rule: in one rule the production minifier folds it into the
+	 * `animation` shorthand, which browsers reject, and the bar never moves.
+	 */
 	@supports (animation-timeline: scroll()) {
 		.read-progress span {
 			animation: read-progress linear both;
+		}
+
+		.read-progress > span {
 			animation-timeline: scroll(root);
 		}
 	}
