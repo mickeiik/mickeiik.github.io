@@ -22,7 +22,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const [featured, ...recent] = (await getPosts(lang)).slice(0, homePostCount);
-const track = homeModules.music ? getTrack() : null;
+const track = homeModules.music ? await getTrack() : null;
 const book = homeModules.reading ? getReading() : null;
 const activity = homeModules.github ? await getActivity() : null;
 

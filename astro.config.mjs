@@ -10,6 +10,9 @@ export default defineConfig({
 		schema: {
 			// Reads the GitHub contribution calendar at build time (src/lib/github.ts). Optional: without it the tile is hidden.
 			GITHUB_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
+			// Base URL of the live data Worker (~/Work/mickeiik-live), read at build time and polled by the browser.
+			// Optional: without it the music tile is hidden in production.
+			LIVE_API_URL: envField.string({ context: 'client', access: 'public', optional: true, url: true }),
 		},
 	},
 	i18n: {

@@ -36,6 +36,8 @@ jobs:
         env:
           # Reads the public contribution calendar for the homepage GitHub tile.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Live data Worker for the music tile (repository variable). Unset hides the tile.
+          LIVE_API_URL: ${{ vars.LIVE_API_URL }}
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

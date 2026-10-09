@@ -38,6 +38,8 @@ export const ui = {
 		'music.play': 'Play',
 		'music.pause': 'Pause',
 		'music.seek': 'Position in the track',
+		'music.live': 'listening now',
+		'music.lastPlayed': 'played {time}',
 
 		'writing.title': 'Writing',
 		'writing.intro': 'Notes on what I learn and build. Short posts, longer series, the occasional thought on life.',
@@ -115,6 +117,8 @@ export const ui = {
 		'music.play': 'Lecture',
 		'music.pause': 'Pause',
 		'music.seek': 'Position dans le morceau',
+		'music.live': "j'écoute en ce moment",
+		'music.lastPlayed': 'écouté {time}',
 
 		'writing.title': 'Articles',
 		'writing.intro':

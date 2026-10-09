@@ -62,7 +62,7 @@ function seek(ms: number) {
 }
 
 /** Avoids rewriting unchanged attributes every frame (screen readers re-announce them). */
-function setAttr(el: Element, name: string, value: string) {
+export function setAttr(el: Element, name: string, value: string) {
 	if (el.getAttribute(name) !== value) el.setAttribute(name, value);
 }
 
@@ -89,6 +89,12 @@ function render() {
 		input.style.setProperty('--progress', total ? `${(Number(input.value) / total) * 100}%` : '0%');
 		setAttr(input, 'aria-valuetext', `${formatTime(Number(input.value))} / ${formatTime(total)}`);
 	});
+}
+
+/** The live card switched tracks (src/scripts/music-live.ts): the seek bar follows the new length. */
+export function setTrackDuration(ms: number) {
+	state.duration = ms;
+	render();
 }
 
 /** Moves the hover tip to the pointer and shows the time at that spot. */

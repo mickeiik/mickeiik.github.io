@@ -1,11 +1,13 @@
 ---
-import type { Track } from '../../lib/live';
+import { musicUrl, type Track } from '../../lib/live';
 import { useTranslations, type Lang } from '../../i18n/utils';
 
 /**
  * Music player card. It always renders "stopped" (no autoplay); the play button switches every
  * player on the page to "now playing" through src/scripts/music.ts.
  * Without an audio source there is nothing to play, so the button and seek bar are disabled.
+ * With the live Worker, src/scripts/music-live.ts keeps the track and the presence line
+ * ("listening now" / "played 2 hours ago") in sync with the phone.
  * On phones it keeps the same layout, scaled down.
  */
 interface Props {
@@ -25,9 +27,10 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 	data-state="stopped"
 	data-duration={track.durationMs}
 	data-audio-src={track.audioUrl}
+	data-live-src={musicUrl}
 >
 	<div class="disc" aria-hidden="true">
-		<div class="label">
+		<div class="label" data-track-art>
 			{track.artworkUrl ? <img src={track.artworkUrl} alt="" loading="lazy" /> : <span class="hole" />}
 		</div>
 	</div>
@@ -41,8 +44,23 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 			</p>
 			<span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
 		</div>
-		<p class="title display">{track.title}</p>
-		<p class="meta">{[track.artist, track.album].filter(Boolean).join(' · ')}</p>
+		<p class="title display" data-track-title>{track.title}</p>
+		<p class="meta" data-track-meta>{[track.artist, track.album].filter(Boolean).join(' · ')}</p>
+		{
+			track.playedAt && (
+				<p
+					class="presence mono"
+					data-music-presence
+					data-live={track.live ? 'true' : undefined}
+					data-played-at={track.playedAt}
+					data-label-live={t('music.live')}
+					data-label-played={t('music.lastPlayed')}
+				>
+					<span class="presence-dot" aria-hidden="true" />
+					<span class="presence-text" data-presence-text />
+				</p>
+			)
+		}
 		<div class="controls">
 			<button
 				type="button"
@@ -83,6 +101,7 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 
 <script>
 	import '../../scripts/music';
+	import '../../scripts/music-live';
 </script>
 
 <style>
@@ -209,6 +228,46 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 	.meta {
 		margin-top: var(--space-1);
 		color: var(--color-text-muted);
+	}
+
+	/* Is the phone playing right now. Filled in by the script, since a build-time relative time goes stale. */
+	.presence {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-top: var(--space-2);
+		font-size: var(--text-xs);
+		color: var(--color-text-faint);
+		transition: color 0.3s;
+	}
+
+	.presence:not([data-ready]) {
+		visibility: hidden;
+	}
+
+	.presence-dot {
+		display: none;
+		flex: none;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		animation: pulse-ring 1.6s ease-out infinite;
+	}
+
+	.presence[data-live] {
+		color: var(--color-lime);
+	}
+
+	.presence[data-live] .presence-dot {
+		display: block;
+	}
+
+	.presence-text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.controls {

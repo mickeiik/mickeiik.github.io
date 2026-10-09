@@ -2,13 +2,14 @@ import type { Lang } from '../i18n/utils';
 
 /**
  * Live sample data is shown while running `astro dev` so the layout can be designed
- * before the Cloudflare Worker exists. Production builds hide modules without a real source.
+ * before each module has a data source. Production builds hide modules without a real source.
  */
 const preview = import.meta.env.DEV;
 
 /** Which homepage tiles are rendered. Live modules turn on once their data source is connected. */
 export const homeModules = {
-	music: preview,
+	/** Hidden automatically when the build has no track from the Worker (src/lib/live.ts). */
+	music: true,
 	clock: true,
 	building: preview,
 	reading: preview,
