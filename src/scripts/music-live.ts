@@ -53,20 +53,22 @@ function renderPresence(root: HTMLElement) {
 	presence.dataset.ready = '';
 }
 
-/** Shows the cover on the record's label, or the plain label with its hole. */
-function renderArtwork(label: HTMLElement | null, url: string | undefined) {
-	if (!label) return;
-	const img = label.querySelector('img');
+/** Shows the cover as the record's sleeve, or the record alone when there is none. */
+function renderArtwork(record: HTMLElement | null, url: string | undefined) {
+	if (!record) return;
+	const sleeve = record.querySelector('.sleeve');
 	if (url) {
-		if (img?.getAttribute('src') === url) return;
+		if (sleeve?.getAttribute('src') === url) return;
 		const next = document.createElement('img');
+		next.className = 'sleeve';
 		next.src = url;
 		next.alt = '';
-		label.replaceChildren(next);
-	} else if (img) {
-		const hole = document.createElement('span');
-		hole.className = 'hole';
-		label.replaceChildren(hole);
+		if (sleeve) sleeve.replaceWith(next);
+		else record.append(next);
+		record.dataset.cover = '';
+	} else if (sleeve) {
+		sleeve.remove();
+		delete record.dataset.cover;
 	}
 }
 
