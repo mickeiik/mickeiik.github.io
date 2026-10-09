@@ -78,6 +78,11 @@ const other = otherLang(lang);
 </Tile>
 
 <style>
+	/* Tighter than the shared padding="lg", like the writing page's header. */
+	.article-header {
+		padding: clamp(var(--space-6), 3vw, var(--space-10));
+	}
+
 	.article-header :global(.prompt) {
 		font-size: 0.875rem;
 	}

@@ -34,6 +34,8 @@ const t = useTranslations(lang);
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-7) var(--space-12);
+		/* Tighter than the shared padding="lg", which leaves this card mostly empty space. */
+		padding: clamp(var(--space-6), 3vw, var(--space-10));
 	}
 
 	.copy {
