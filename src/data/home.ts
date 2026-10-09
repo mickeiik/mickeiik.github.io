@@ -16,8 +16,12 @@ export const homeModules = {
 	github: true,
 };
 
-/** How many recent posts the homepage shows (one featured, the rest as small tiles). */
-export const homePostCount = 3;
+/**
+ * How many recent posts the homepage shows (one featured, the rest as small tiles).
+ * Kept at 1 so the grid has the same tiles in every language, whatever each one has published;
+ * the "All writing" tile leads to the rest.
+ */
+export const homePostCount = 1;
 
 /** Curated "what I'm building" tile. */
 export const building: { name: string; status: Record<Lang, string>; href?: string } = {

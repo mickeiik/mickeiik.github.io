@@ -34,6 +34,7 @@ const t = useTranslations(lang);
 		justify-content: space-between;
 		gap: var(--space-8);
 		padding: var(--space-9);
+		container-type: inline-size;
 	}
 
 	h1 {
@@ -57,6 +58,22 @@ const t = useTranslations(lang);
 		margin-top: var(--space-7);
 	}
 
+	/*
+	 * When the tile is narrow, the buttons stack the same way in every language (blog on its own row,
+	 * then GitHub and LinkedIn) instead of wrapping wherever the label lengths make them wrap.
+	 */
+	@container (max-width: 520px) {
+		.actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-2);
+		}
+
+		.actions > :first-child {
+			grid-column: 1 / -1;
+		}
+	}
+
 	@media (max-width: 760px) {
 		.intro {
 			padding: var(--space-6);
@@ -68,16 +85,6 @@ const t = useTranslations(lang);
 
 		.tagline {
 			font-size: 1.0625rem;
-		}
-
-		.actions {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-2);
-		}
-
-		.actions > :first-child {
-			grid-column: 1 / -1;
 		}
 	}
 </style>

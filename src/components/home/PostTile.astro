@@ -32,8 +32,8 @@ const label = seriesInfo ? `${post.data.series!.id}/${String(post.data.series!.p
 				<Icon name="arrow-up-right" size={30} strokeWidth={2} class="tile-arrow" />
 			</div>
 			<div>
-				<h2 class="display">{title}</h2>
-				<p class="description">{description}</p>
+				<h2 class="display clamp" style="--lines: 2">{title}</h2>
+				<p class="description clamp" style="--lines: 1">{description}</p>
 			</div>
 		</Tile>
 	) : (
@@ -56,8 +56,23 @@ const label = seriesInfo ? `${post.data.series!.id}/${String(post.data.series!.p
 		gap: var(--space-5);
 	}
 
+	/*
+	 * The featured tile fills its grid row but never stretches it, so the homepage keeps the same
+	 * proportions whatever the post (and language). Long titles and descriptions are clamped instead.
+	 */
 	.featured {
-		padding: var(--space-7);
+		padding: var(--space-6) var(--space-7);
+		gap: var(--space-3);
+		contain: size;
+		overflow: hidden;
+	}
+
+	.clamp {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: var(--lines);
+		line-clamp: var(--lines);
 	}
 
 	.head {
@@ -113,7 +128,18 @@ const label = seriesInfo ? `${post.data.series!.id}/${String(post.data.series!.p
 		color: var(--color-text-muted);
 	}
 
+	/* On phones each tile has its own row: show the full post teaser. */
 	@media (max-width: 760px) {
+		.featured {
+			padding: var(--space-7);
+			gap: var(--space-5);
+			contain: none;
+		}
+
+		.featured .clamp {
+			display: block;
+		}
+
 		.featured h2 {
 			margin-top: var(--space-6);
 			font-size: 1.875rem;
