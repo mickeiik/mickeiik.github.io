@@ -110,9 +110,24 @@ function showTip(wrap: HTMLElement, clientX: number) {
 	wrap.style.setProperty('--tip-x', `${Math.max(half, Math.min(rect.width - half, ratio * rect.width))}px`);
 }
 
+/** Gives each cut title or meta line its full text, shown as a tip on hover. */
+export function markClippedLines(root: ParentNode = document) {
+	root.querySelectorAll<HTMLElement>('[data-clipped-line]').forEach((line) => {
+		const clip = line.firstElementChild as HTMLElement | null;
+		if (clip && clip.scrollWidth > clip.clientWidth) setAttr(line, 'data-full', clip.textContent ?? '');
+		else line.removeAttribute('data-full');
+	});
+}
+
+// Lines get cut or uncut as the card resizes and once the web fonts load.
+const lineWatcher = new ResizeObserver(() => markClippedLines());
+
 function setup() {
 	const source = document.querySelector<HTMLElement>('[data-now-playing]');
+	lineWatcher.disconnect();
 	if (!source) return;
+	lineWatcher.observe(source);
+	document.fonts.ready.then(() => markClippedLines());
 	if (!state.duration) state.duration = Number(source.dataset.duration) || 0;
 	if (!state.audio && source.dataset.audioSrc) {
 		state.audio = new Audio(source.dataset.audioSrc);

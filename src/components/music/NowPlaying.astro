@@ -8,6 +8,7 @@ import { useTranslations, type Lang } from '../../i18n/utils';
  * Without an audio source there is nothing to play, so the button and seek bar are disabled.
  * With the live Worker, src/scripts/music-live.ts keeps the track and the presence line
  * ("listening now" / "played 2 hours ago") in sync with the phone.
+ * Title and meta stay on one line; when one is cut, hovering it shows the full text.
  * On phones it keeps the same layout, scaled down.
  */
 interface Props {
@@ -45,8 +46,10 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 			</p>
 			<span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
 		</div>
-		<p class="title display" data-track-title>{track.title}</p>
-		<p class="meta" data-track-meta>{[track.artist, track.album].filter(Boolean).join(' · ')}</p>
+		<p class="title display" data-clipped-line><span class="clip" data-track-title>{track.title}</span></p>
+		<p class="meta" data-clipped-line>
+			<span class="clip" data-track-meta>{[track.artist, track.album].filter(Boolean).join(' · ')}</span>
+		</p>
 		{
 			track.playedAt && (
 				<p
@@ -117,18 +120,19 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 	/*
 	 * The record. With a cover, the full cover is shown as its sleeve and the record peeks out
 	 * on the right; it slides further out while playing. Without one, the record stands alone.
+	 * Both take the same width (--box): with a cover, the sleeve shrinks so the peeking record fits.
 	 */
 	.record {
-		--size: 140px;
+		--box: 140px;
+		--size: var(--box);
 		position: relative;
 		flex: none;
-		width: var(--size);
+		width: var(--box);
 		height: var(--size);
-		transition: width var(--duration-base) var(--ease-out);
 	}
 
 	.record[data-cover] {
-		width: calc(var(--size) * 1.36);
+		--size: calc(var(--box) / 1.2);
 	}
 
 	.disc {
@@ -148,11 +152,11 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 	}
 
 	.record[data-cover] .disc {
-		translate: 26% 0;
+		translate: 12% 0;
 	}
 
 	[data-state='playing'] .record[data-cover] .disc {
-		translate: 36% 0;
+		translate: 20% 0;
 	}
 
 	/* Global: the script swaps the cover when the track changes, and its element has no scoped attribute. */
@@ -266,14 +270,57 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 		font-size: var(--text-xl);
 		line-height: 1.1;
 		letter-spacing: -0.02em;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.meta {
 		margin-top: var(--space-1);
 		color: var(--color-text-muted);
+	}
+
+	/* One line each. The inner span clips, so the line itself can hold the full-text tip. */
+	[data-clipped-line] {
+		position: relative;
+	}
+
+	.clip {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Full text of a cut line, set by src/scripts/music.ts only when the line is actually cut. */
+	[data-clipped-line][data-full]::after {
+		content: attr(data-full);
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		z-index: 2;
+		width: max-content;
+		max-width: 100%;
+		padding: 6px 10px;
+		border-radius: var(--radius-xs);
+		background: var(--color-text);
+		color: var(--color-ink);
+		font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		line-height: 1.35;
+		letter-spacing: normal;
+		white-space: normal;
+		opacity: 0;
+		pointer-events: none;
+		transform: translateY(4px);
+		transition:
+			opacity 0.15s,
+			transform 0.15s var(--ease-out);
+	}
+
+	@media (hover: hover) {
+		[data-clipped-line][data-full]:hover::after {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	/* Is the phone playing right now. Filled in by the script, since a build-time relative time goes stale. */
@@ -495,7 +542,7 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 
 		/* Shrinks a little on the narrowest phones so the seek bar keeps its room. */
 		.record {
-			--size: clamp(72px, 22vw, 92px);
+			--box: clamp(72px, 22vw, 92px);
 		}
 
 		.title {
@@ -504,10 +551,7 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 		}
 
 		.meta {
-			overflow: hidden;
 			font-size: 0.875rem;
-			text-overflow: ellipsis;
-			white-space: nowrap;
 		}
 
 		.controls {

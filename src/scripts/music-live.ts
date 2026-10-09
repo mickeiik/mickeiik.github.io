@@ -7,7 +7,7 @@
  * time rendered at build would be stale. Fetch errors are silent: the card keeps its last data.
  */
 import type { Track } from '../lib/live';
-import { setAttr, setTrackDuration } from './music';
+import { markClippedLines, setAttr, setTrackDuration } from './music';
 
 const POLL_MS = 30_000;
 
@@ -79,6 +79,7 @@ function apply(root: HTMLElement, { track, live, playedAt }: Snapshot) {
 	const changed = title?.textContent !== track.title;
 	setText(title, track.title);
 	setText(root.querySelector('[data-track-meta]'), [track.artist, track.album].filter(Boolean).join(' · '));
+	markClippedLines(root);
 	renderArtwork(root.querySelector<HTMLElement>('[data-track-art]'), track.artworkUrl);
 	setAttr(root, 'data-duration', String(track.durationMs ?? ''));
 	if (changed) {
