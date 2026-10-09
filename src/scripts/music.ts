@@ -1,6 +1,5 @@
 /**
- * One music player shared by every player view on the page (homepage card, phone header pill,
- * phone panel). It always starts stopped: nothing plays until the visitor presses play.
+ * The homepage music player card. It always starts stopped: nothing plays until the visitor presses play.
  *
  * Playback only happens through a real audio source (`data-audio-src` on the card). Without one,
  * the controls are disabled and the card stays stopped.
@@ -72,7 +71,7 @@ function render() {
 	const position = Math.min(currentPosition(), total || Infinity);
 	const playing = state.playing ? 'playing' : 'stopped';
 
-	document.querySelectorAll<HTMLElement>('[data-now-playing], [data-player-mini]').forEach((el) => {
+	document.querySelectorAll<HTMLElement>('[data-now-playing]').forEach((el) => {
 		if (el.dataset.state !== playing) el.dataset.state = playing;
 	});
 	document.querySelectorAll<HTMLElement>('[data-player-status]').forEach((el) => {

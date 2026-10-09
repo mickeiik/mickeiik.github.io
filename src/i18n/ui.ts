@@ -12,9 +12,6 @@ export const ui = {
 		'nav.writing': 'Writing',
 		'nav.now': 'Now',
 		'nav.switch': 'Lire en français',
-		'nav.open': 'Open menu',
-		'nav.close': 'Close menu',
-		'nav.language': 'language',
 		'logo.label': 'Mickaël Kenan, home',
 
 		'home.tagline':
@@ -38,8 +35,6 @@ export const ui = {
 		'music.nowPlaying': 'now playing',
 		'music.stopped': 'stopped',
 		'music.writtenTo': 'written to',
-		'music.show': 'Show the player',
-		'music.hide': 'Hide the player',
 		'music.play': 'Play',
 		'music.pause': 'Pause',
 		'music.seek': 'Position in the track',
@@ -94,9 +89,6 @@ export const ui = {
 		'nav.writing': 'Articles',
 		'nav.now': 'En ce moment',
 		'nav.switch': 'Read in English',
-		'nav.open': 'Ouvrir le menu',
-		'nav.close': 'Fermer le menu',
-		'nav.language': 'langue',
 		'logo.label': 'Mickaël Kenan, accueil',
 
 		'home.tagline':
@@ -120,8 +112,6 @@ export const ui = {
 		'music.nowPlaying': 'en écoute',
 		'music.stopped': 'arrêté',
 		'music.writtenTo': 'écrit en écoutant',
-		'music.show': 'Afficher le lecteur',
-		'music.hide': 'Masquer le lecteur',
 		'music.play': 'Lecture',
 		'music.pause': 'Pause',
 		'music.seek': 'Position dans le morceau',

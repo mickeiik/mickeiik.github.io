@@ -6,22 +6,21 @@ import { useTranslations, type Lang } from '../../i18n/utils';
  * Music player card. It always renders "stopped" (no autoplay); the play button switches every
  * player on the page to "now playing" through src/scripts/music.ts.
  * Without an audio source there is nothing to play, so the button and seek bar are disabled.
- * `size="large"` is the homepage tile, `size="compact"` the phone player panel.
+ * On phones it keeps the same layout, scaled down.
  */
 interface Props {
 	track: Track;
 	lang: Lang;
-	size?: 'large' | 'compact';
 }
 
-const { track, lang, size = 'large' } = Astro.props;
+const { track, lang } = Astro.props;
 const t = useTranslations(lang);
 const playable = Boolean(track.audioUrl);
 const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 ---
 
 <div
-	class:list={['now-playing', `size-${size}`]}
+	class="now-playing"
 	data-now-playing
 	data-state="stopped"
 	data-duration={track.durationMs}
@@ -383,43 +382,41 @@ const formatTime = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.flo
 		background: var(--color-control-hover);
 	}
 
-	/* Compact (phone panel): disc and text side by side, controls on their own row below. */
-	.size-compact {
-		display: grid;
-		grid-template-columns: 88px minmax(0, 1fr);
-		align-items: center;
-		column-gap: var(--space-4);
-	}
+	/* Phones: the same layout as the homepage tile, scaled down. */
+	@media (max-width: 760px) {
+		.now-playing {
+			gap: var(--space-4);
+		}
 
-	.size-compact .disc {
-		grid-row: 1 / span 3;
-		width: 88px;
-		height: 88px;
-	}
+		/* Shrinks a little on the narrowest phones so the seek bar keeps its room. */
+		.disc {
+			width: clamp(72px, 24vw, 92px);
+			height: clamp(72px, 24vw, 92px);
+		}
 
-	.size-compact .info {
-		display: contents;
-	}
+		.title {
+			margin-top: var(--space-2);
+			font-size: var(--text-lg);
+		}
 
-	.size-compact .controls {
-		grid-column: 1 / -1;
-		margin-top: 14px;
-	}
+		.meta {
+			overflow: hidden;
+			font-size: 0.875rem;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 
-	.size-compact .title {
-		margin-top: 6px;
-		font-size: var(--text-lg);
-	}
+		.controls {
+			gap: 10px;
+			margin-top: var(--space-3);
+		}
 
-	.size-compact .meta {
-		font-size: 0.875rem;
-	}
+		.equalizer {
+			height: 18px;
+		}
 
-	.size-compact .equalizer {
-		height: 18px;
-	}
-
-	.size-compact .equalizer i {
-		width: 3px;
+		.equalizer i {
+			width: 3px;
+		}
 	}
 </style>

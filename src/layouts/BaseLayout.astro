@@ -4,9 +4,6 @@ import { Font } from 'astro:assets';
 import { ClientRouter } from 'astro:transitions';
 import SiteHeader from '../components/layout/SiteHeader.astro';
 import SiteFooter from '../components/layout/SiteFooter.astro';
-import PlayerPanel from '../components/music/PlayerPanel.astro';
-import { homeModules } from '../data/home';
-import { getTrack } from '../lib/live';
 import { site, type NavKey } from '../data/site';
 import { otherLang, translatePath, type Lang } from '../i18n/utils';
 
@@ -27,7 +24,6 @@ const pageTitle = title ? `${title} | ${site.title}` : site.title;
 const other = otherLang(lang);
 const alternate = alternateUrl ?? translatePath(Astro.url.pathname, lang, other);
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const track = homeModules.music ? getTrack() : null;
 ---
 
 <!doctype html>
@@ -54,7 +50,6 @@ const track = homeModules.music ? getTrack() : null;
 	<body>
 		<SiteHeader lang={lang} active={nav} alternateUrl={alternate} />
 		<main class="page">
-			{track && <PlayerPanel track={track} lang={lang} />}
 			<slot />
 		</main>
 		<SiteFooter lang={lang} />

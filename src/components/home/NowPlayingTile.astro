@@ -14,7 +14,6 @@ const { track, lang, delay } = Astro.props;
 const t = useTranslations(lang);
 ---
 
-<!-- On phones the player lives in the header (mini player), so this tile is desktop only. -->
 <Tile cols={2} delay={delay} animate="enter-fast" class="now-playing-tile" aria-label={t('music.player')}>
 	<NowPlaying track={track} lang={lang} />
 </Tile>
@@ -29,7 +28,7 @@ const t = useTranslations(lang);
 
 	@media (max-width: 760px) {
 		.now-playing-tile {
-			display: none;
+			padding: var(--space-6);
 		}
 	}
 </style>
