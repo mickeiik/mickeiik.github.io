@@ -2,6 +2,7 @@
 import Tile from '../ui/Tile.astro';
 import Prompt from '../ui/Prompt.astro';
 import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
 import { site } from '../../data/site';
 import { localizePath, useTranslations, type Lang } from '../../i18n/utils';
 
@@ -15,7 +16,14 @@ const t = useTranslations(lang);
 ---
 
 <Tile cols={2} rows={2} padding="none" delay={delay} animate="enter-fast" class="intro">
-	<Prompt path={`~/${site.handle}`} command="whoami" />
+	<div class="top">
+		<Prompt path={`~/${site.handle}`} command="whoami" />
+		<button type="button" class="shell-hint mono" data-terminal-open aria-label={t('shell.open')}>
+			<Icon name="terminal" size={14} strokeWidth={2.2} />
+			<span class="label">{t('shell.label')}</span>
+			<span class="keys" aria-hidden="true"><kbd class="shell-kbd" data-shortcut-mod>ctrl</kbd><kbd class="shell-kbd">K</kbd></span>
+		</button>
+	</div>
 	<div>
 		<h1 class="display">{site.title}</h1>
 		<p class="tagline">{t('home.tagline')}</p>
@@ -35,6 +43,54 @@ const t = useTranslations(lang);
 		gap: var(--space-8);
 		padding: var(--space-9);
 		container-type: inline-size;
+	}
+
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	/* Opens the site shell (src/components/layout/Terminal.astro). */
+	.shell-hint {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: 7px;
+		padding: 5px 6px 5px 11px;
+		border: 1px dashed var(--color-border-strong);
+		border-radius: var(--radius-pill);
+		background: none;
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		transition:
+			color 0.25s,
+			border-color 0.25s,
+			transform 0.35s var(--ease-pop);
+	}
+
+	.shell-hint:hover {
+		border-style: solid;
+		border-color: var(--color-lime);
+		color: var(--color-lime);
+		transform: translateY(-1px);
+	}
+
+	.keys {
+		display: inline-flex;
+		gap: 3px;
+	}
+
+	/* No keyboard shortcut to show on touch screens. */
+	@media (pointer: coarse) {
+		.shell-hint {
+			padding-right: 11px;
+		}
+
+		.keys {
+			display: none;
+		}
 	}
 
 	h1 {

@@ -4,6 +4,7 @@ import { Font } from 'astro:assets';
 import { ClientRouter } from 'astro:transitions';
 import SiteHeader from '../components/layout/SiteHeader.astro';
 import SiteFooter from '../components/layout/SiteFooter.astro';
+import Terminal from '../components/layout/Terminal.astro';
 import { site, type NavKey } from '../data/site';
 import { otherLang, translatePath, type Lang } from '../i18n/utils';
 
@@ -53,6 +54,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 			<slot />
 		</main>
 		<SiteFooter lang={lang} />
+		<Terminal lang={lang} />
 	</body>
 </html>
 

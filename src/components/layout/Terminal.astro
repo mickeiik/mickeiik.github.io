@@ -1,0 +1,486 @@
+---
+import { site } from '../../data/site';
+import { musicUrl } from '../../lib/live';
+import { getPosts, getSeries, postSlug, postUrl, readingTime } from '../../lib/posts';
+import { shellCommands, shellStrings, shellSuggestions } from '../../i18n/shell';
+import { formatDate, localizePath, otherLang, useTranslations, type Lang } from '../../i18n/utils';
+
+/**
+ * The site shell: a terminal window over the page, opened with ctrl/⌘ K, the backtick key or any
+ * [data-terminal-open] button. It persists across page changes (one per language) so the scrollback
+ * survives navigation. Behavior lives in src/scripts/terminal.ts, text in src/i18n/shell.ts.
+ */
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+
+const data = {
+	lang,
+	otherLang: otherLang(lang),
+	handle: site.handle,
+	name: site.title,
+	tagline: t('home.tagline'),
+	home: localizePath('/', lang),
+	writing: localizePath('/blog/', lang),
+	timeZone: site.timeZone,
+	musicUrl,
+	links: site.social,
+	posts: posts.map((post) => ({
+		slug: postSlug(post),
+		title: post.data.title,
+		description: post.data.description,
+		date: formatDate(post.data.pubDate, lang, 'iso'),
+		minutes: readingTime(post),
+		tags: post.data.tags,
+		url: postUrl(post),
+	})),
+	series: getSeries(posts, lang).map((series) => ({ title: series.title, parts: series.parts.map(postSlug) })),
+	commands: shellCommands.map(({ name, args, help }) => ({ name, args, help: help[lang] })),
+	strings: { ...shellStrings[lang], live: t('music.live'), played: t('music.lastPlayed') },
+};
+// Inline JSON must not close its own <script>.
+const json = JSON.stringify(data).replace(/</g, '\\u003c');
+---
+
+<dialog class="terminal" data-terminal aria-label={t('shell.title')} transition:persist={`terminal-${lang}`}>
+	<div class="titlebar">
+		<div class="dots">
+			<button type="button" class="dot close" data-terminal-close aria-label={t('shell.close')}></button>
+			<span class="dot" aria-hidden="true"></span>
+			<span class="dot" aria-hidden="true"></span>
+		</div>
+		<p class="title mono" aria-hidden="true">{site.handle}@mk: <span data-term-cwd>~</span></p>
+		<kbd class="esc mono" aria-hidden="true">esc</kbd>
+	</div>
+
+	<div class="screen mono" data-term-screen tabindex="-1" autofocus>
+		<div class="log" data-term-log role="log" aria-live="polite"></div>
+		<form class="line" data-term-form>
+			<label for={`term-input-${lang}`} class="ps1"><span class="path" data-term-ps1>~/{site.handle}</span> $</label>
+			<input
+				id={`term-input-${lang}`}
+				data-term-input
+				aria-label={t('shell.input')}
+				autocomplete="off"
+				autocapitalize="off"
+				autocorrect="off"
+				spellcheck="false"
+				enterkeyhint="go"
+			/>
+		</form>
+	</div>
+
+	<div class="chips mono">
+		<span class="try">{shellStrings[lang].try}</span>
+		{
+			shellSuggestions.map((command) => (
+				<button type="button" class="chip" data-run={command}>
+					{command}
+				</button>
+			))
+		}
+	</div>
+
+	<script type="application/json" is:inline data-term-data set:html={json} />
+</dialog>
+
+<script>
+	import '../../scripts/terminal';
+</script>
+
+<!-- Global: the screen's lines are created by the script, outside this component's scope. -->
+<style is:global>
+	.terminal {
+		width: min(760px, calc(100% - 2 * var(--page-gutter)));
+		height: min(540px, calc(100dvh - 2 * var(--header-offset)));
+		max-width: none;
+		max-height: none;
+		margin: max(var(--header-offset), 10vh) auto auto;
+		padding: 0;
+		overflow: hidden;
+		border: 1px solid var(--color-border-raised);
+		border-radius: var(--radius-xl);
+		background: var(--color-code-bg);
+		color: var(--color-text-body);
+		box-shadow:
+			0 40px 90px -30px rgb(0 0 0 / 0.85),
+			0 0 0 6px rgb(198 243 107 / 0.04);
+	}
+
+	.terminal[open] {
+		display: flex;
+		flex-direction: column;
+		animation: term-in 0.5s var(--ease-spring);
+	}
+
+	.terminal::backdrop {
+		background: rgb(5 6 8 / 0.62);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+	}
+
+	.terminal[open]::backdrop {
+		animation: term-fade 0.3s var(--ease-out);
+	}
+
+	.terminal[data-closing] {
+		animation: term-out 0.22s var(--ease-in-out) forwards;
+	}
+
+	.terminal[data-closing]::backdrop {
+		animation: term-fade-out 0.22s var(--ease-in-out) forwards;
+	}
+
+	@keyframes term-in {
+		from {
+			opacity: 0;
+			transform: translateY(28px) scale(0.95);
+		}
+	}
+
+	@keyframes term-out {
+		to {
+			opacity: 0;
+			transform: translateY(14px) scale(0.97);
+		}
+	}
+
+	@keyframes term-fade {
+		from {
+			opacity: 0;
+		}
+	}
+
+	@keyframes term-fade-out {
+		to {
+			opacity: 0;
+		}
+	}
+
+	/* Window chrome */
+
+	.terminal .titlebar {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding: 12px 16px;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-code-bar);
+	}
+
+	.terminal .dots {
+		display: flex;
+		gap: 8px;
+	}
+
+	.terminal .dot {
+		width: 12px;
+		height: 12px;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: var(--color-control-hover);
+		transition:
+			background 0.25s,
+			transform 0.3s var(--ease-pop);
+	}
+
+	.terminal .dot.close {
+		position: relative;
+		background: var(--color-coral);
+	}
+
+	/* A bigger invisible target around the small close dot. */
+	.terminal .dot.close::after {
+		content: '';
+		position: absolute;
+		inset: -10px;
+	}
+
+	.terminal .dot.close:hover {
+		transform: scale(1.25);
+	}
+
+	.terminal .dots:hover .dot:nth-child(2) {
+		background: var(--color-peach);
+	}
+
+	.terminal .dots:hover .dot:nth-child(3) {
+		background: var(--color-lime);
+	}
+
+	.terminal .title {
+		position: absolute;
+		left: 50%;
+		max-width: 60%;
+		overflow: hidden;
+		transform: translateX(-50%);
+		font-size: var(--text-xs);
+		color: var(--color-text-faint);
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	.terminal kbd,
+	.shell-kbd {
+		padding: 2px 7px;
+		border: 1px solid var(--color-border-strong);
+		border-bottom-width: 2px;
+		border-radius: var(--radius-xs);
+		font-size: var(--text-2xs);
+		color: var(--color-text-muted);
+	}
+
+	/* Screen */
+
+	.terminal .screen {
+		flex: 1;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 18px 22px 8px;
+		font-size: 0.875rem;
+		line-height: 1.65;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-border-strong) transparent;
+		outline: none;
+	}
+
+	.terminal .log p {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	.terminal .term-block {
+		margin-bottom: 10px;
+	}
+
+	.terminal .term-block > * {
+		animation: term-line 0.32s var(--ease-out) calc(var(--i, 0) * 28ms) backwards;
+	}
+
+	@keyframes term-line {
+		from {
+			opacity: 0;
+			transform: translateY(5px);
+		}
+	}
+
+	.terminal .path {
+		color: var(--color-lime);
+	}
+
+	.terminal .term-cmd {
+		color: var(--color-text);
+	}
+
+	.terminal .term-row {
+		display: grid;
+		grid-template-columns: var(--key, 14ch) minmax(0, 1fr);
+		gap: 2ch;
+	}
+
+	.terminal .term-gap {
+		height: 0.6em;
+	}
+
+	/* Tones */
+
+	.terminal .t-faint {
+		color: var(--color-text-faint);
+	}
+
+	.terminal .t-muted {
+		color: var(--color-text-muted);
+	}
+
+	.terminal .t-text {
+		color: var(--color-text);
+	}
+
+	.terminal .t-err {
+		color: var(--color-coral);
+	}
+
+	.terminal .t-ok,
+	.terminal .t-here {
+		color: var(--color-mint);
+	}
+
+	.terminal .t-tag,
+	.terminal .t-music {
+		color: var(--color-lime);
+	}
+
+	.terminal .t-link,
+	.terminal .t-dir {
+		color: var(--color-periwinkle);
+	}
+
+	.terminal .t-dir {
+		font-weight: 500;
+	}
+
+	.terminal .t-title {
+		display: inline-block;
+		margin: 2px 0;
+		font-family: var(--font-display), sans-serif;
+		font-size: 1.375rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: var(--tracking-tight);
+		color: var(--color-text);
+	}
+
+	.terminal .t-live::before {
+		content: '';
+		display: inline-block;
+		width: 7px;
+		height: 7px;
+		margin-right: 8px;
+		border-radius: 50%;
+		background: var(--color-mint);
+		vertical-align: 0.1em;
+		animation: term-pulse 1.6s ease-in-out infinite;
+	}
+
+	@keyframes term-pulse {
+		50% {
+			opacity: 0.35;
+			transform: scale(0.75);
+		}
+	}
+
+	.terminal .term-run {
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		text-align: left;
+		text-decoration: underline dotted color-mix(in srgb, currentColor 45%, transparent);
+		text-underline-offset: 3px;
+		cursor: pointer;
+		transition: color 0.2s;
+	}
+
+	.terminal .term-run:hover {
+		color: var(--color-text);
+		text-decoration-style: solid;
+	}
+
+	.terminal mark {
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--color-lime) 22%, transparent);
+		color: var(--color-lime);
+	}
+
+	/* Prompt line */
+
+	.terminal .line {
+		display: flex;
+		align-items: baseline;
+		gap: 1ch;
+		padding-bottom: 12px;
+	}
+
+	.terminal .ps1 {
+		flex: none;
+		color: var(--color-text-muted);
+	}
+
+	.terminal .line input {
+		flex: 1;
+		min-width: 0;
+		padding: 0;
+		border: 0;
+		outline: none;
+		background: none;
+		font: inherit;
+		color: var(--color-text);
+		caret-color: var(--color-lime);
+		caret-shape: block;
+	}
+
+	.terminal[data-busy] .line input {
+		caret-color: transparent;
+	}
+
+	/* Suggestion chips */
+
+	.terminal .chips {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 16px 12px;
+		border-top: 1px solid var(--color-border);
+		font-size: var(--text-xs);
+	}
+
+	.terminal .try {
+		margin-right: 4px;
+		color: var(--color-text-faint);
+	}
+
+	.terminal .chip {
+		padding: 4px 11px;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-pill);
+		background: none;
+		font: inherit;
+		color: var(--color-text-soft);
+		transition:
+			border-color 0.2s,
+			color 0.2s,
+			transform 0.3s var(--ease-pop);
+	}
+
+	.terminal .chip:hover {
+		border-color: var(--color-lime);
+		color: var(--color-lime);
+		transform: translateY(-1px);
+	}
+
+	@media (max-width: 760px) {
+		/* Pinned near the top so the phone keyboard does not cover the prompt. */
+		.terminal {
+			width: calc(100% - 20px);
+			height: min(560px, 62dvh);
+			margin-top: 10px;
+			border-radius: var(--radius-lg);
+		}
+
+		.terminal .screen {
+			padding: 14px 16px 6px;
+			font-size: 0.8125rem;
+		}
+
+		/* 16px stops iOS from zooming in on focus. */
+		.terminal .line input {
+			font-size: 16px;
+		}
+
+		.terminal .esc {
+			display: none;
+		}
+
+		.terminal .term-row {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.terminal[open],
+		.terminal[open]::backdrop,
+		.terminal .term-block > *,
+		.terminal .t-live::before {
+			animation: none;
+		}
+	}
+</style>

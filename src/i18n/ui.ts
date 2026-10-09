@@ -84,6 +84,12 @@ export const ui = {
 		'notFound.search': 'or search the posts',
 		'notFound.here': 'you were here',
 
+		'shell.title': 'Site shell',
+		'shell.open': 'Open a shell',
+		'shell.close': 'Close the shell',
+		'shell.input': 'Command',
+		'shell.label': 'shell',
+
 	},
 	fr: {
 		'nav.label': 'Navigation principale',
@@ -163,6 +169,12 @@ export const ui = {
 		'notFound.writing': 'Parcourir les articles',
 		'notFound.search': 'ou chercher dans les articles',
 		'notFound.here': 'vous étiez ici',
+
+		'shell.title': 'Terminal du site',
+		'shell.open': 'Ouvrir un terminal',
+		'shell.close': 'Fermer le terminal',
+		'shell.input': 'Commande',
+		'shell.label': 'terminal',
 
 	},
 } as const;
