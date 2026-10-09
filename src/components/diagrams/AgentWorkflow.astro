@@ -1,5 +1,6 @@
 ---
 import type { Lang } from '../../i18n/utils';
+import ScrollCaptions from './ScrollCaptions.astro';
 
 /**
  * Article figure: how a task moved through my OpenCode agent team (Engflow series, part 1).
@@ -9,6 +10,10 @@ import type { Lang } from '../../i18n/utils';
  * Wide: three lanes (me, lead, subagents) on a grid; connectors are drawn in CSS relative to each card,
  * so they follow the cards when text wraps. Narrow (container under 640px): one column, read top to
  * bottom, with the correction loops and escalations shown as notes on the cards.
+ *
+ * It unfolds as the reader scrolls (src/scripts/scroll-diagrams.ts): the stage under the reading line is ringed,
+ * the ones below wait dimmed, and ScrollCaptions tells the stage in one line. Without the script, the default
+ * path is highlighted in a loop instead.
  */
 interface Props {
 	lang: Lang;
@@ -87,6 +92,25 @@ const copy = {
 			],
 		},
 		legend: { main: 'default path', loop: 'correction loop', me: 'I step in', premium: 'premium: my approval per call' },
+		scrub: {
+			hint: 'scroll to run the task',
+			captions: [
+				'One line from me starts it all: implement issue #X.',
+				'The Lead pins down the goal and what counts as done, asking me only where the spec leaves gaps.',
+				'It reads the code itself, then packs everything the Builder will need into one brief.',
+				'The Builder knows only the brief. If something is missing, it answers MISSING and the Lead rewrites it.',
+				'The Lead runs the full checks. Small failures it fixes; bigger ones go to a brand-new Builder.',
+				'A WIP commit freezes the code, so every reviewer checks the same SHA.',
+				'Three reviewers read it in parallel, each with its own mandate.',
+				'Findings are merged and fixed; only the flagged mandates review again. Still not clean after 2 rounds: I step in.',
+				'The Lead writes down what it observed and commits it as a new revision.',
+				'A fresh reviewer re-runs every recorded command. Any mismatch goes back for a fix.',
+				'Close-out commands, then a commit or PR. Its own last patches get reviewed first.',
+				'The result comes back with its evidence. In between, I saw almost nothing.',
+			],
+			side: { label: 'other routes', text: 'Off the main path, the Lead can call four more agents. The premium ones need my approval every time.' },
+			outro: { label: 'the whole run', text: '12 stages, 4 correction loops, 2 points where I step in.' },
+		},
 	},
 	fr: {
 		title: 'Le parcours d’une tâche dans mon équipe d’agents',
@@ -120,6 +144,25 @@ const copy = {
 			],
 		},
 		legend: { main: 'chemin par défaut', loop: 'boucle de correction', me: 'j’interviens', premium: 'premium : mon accord à chaque appel' },
+		scrub: {
+			hint: 'défilez pour lancer la tâche',
+			captions: [
+				'Tout part d’une ligne de ma part : implémente l’issue #X.',
+				'Le Lead fixe l’objectif et ce qui compte comme terminé, et ne me questionne que si la spec laisse des trous.',
+				'Il lit le code lui-même, puis rassemble tout ce dont le Builder aura besoin dans un seul brief.',
+				'Le Builder ne connaît que le brief. S’il manque quelque chose, il répond MISSING et le Lead le reprend.',
+				'Le Lead lance toutes les vérifications. Il corrige les petits échecs ; les gros repartent vers un nouveau Builder.',
+				'Un commit WIP fige le code : chaque reviewer vérifie le même SHA.',
+				'Trois reviewers relisent en parallèle, chacun avec son propre mandat.',
+				'Les remarques sont fusionnées et corrigées ; seuls les mandats concernés relisent. Toujours pas propre après 2 tours : j’interviens.',
+				'Le Lead consigne ce qu’il a observé et le commite dans une nouvelle révision.',
+				'Un reviewer neuf relance chaque commande enregistrée. Le moindre écart repart en correction.',
+				'Commandes de clôture, puis commit ou PR. Ses propres derniers correctifs passent d’abord en revue.',
+				'Le résultat revient avec ses preuves. Entre les deux, je ne voyais presque rien.',
+			],
+			side: { label: 'autres routes', text: 'Hors du chemin principal, le Lead peut appeler quatre autres agents. Les premium demandent mon accord à chaque fois.' },
+			outro: { label: 'le parcours complet', text: '12 étapes, 4 boucles de correction, 2 moments où j’interviens.' },
+		},
 	},
 }[lang];
 
@@ -150,9 +193,24 @@ const layout: Omit<Step, 'kicker' | 'title' | 'body' | 'items'>[] = [
 ];
 const steps: Step[] = layout.map((s) => ({ ...s, ...text[s.id] }) as Step);
 const column = { me: 1, lead: 2, team: 3 };
+
+// Scroll captions: one per stage of the default path, then the side routes.
+const accent: Record<Tone, string> = {
+	me: 'var(--color-coral)',
+	lead: 'var(--color-lime)',
+	builder: 'var(--color-mint)',
+	reviewer: 'var(--color-peach)',
+};
+const path = steps.filter((s) => s.i !== undefined).sort((a, b) => a.i! - b.i!);
+// The escalation card comes in with the first stage that can escalate.
+const escalation = steps.find((s) => s.id === 'l5')!.i;
+const captions = [
+	...path.map((s) => ({ label: s.title, text: copy.scrub.captions[s.i!], accent: accent[s.tone] })),
+	{ ...copy.scrub.side, accent: 'var(--color-periwinkle)' },
+];
 ---
 
-<div class="wf">
+<div class="wf" data-scrub>
 	<p class="wf-title">{copy.title}</p>
 
 	<div class="board">
@@ -165,6 +223,8 @@ const column = { me: 1, lead: 2, team: 3 };
 				steps.map((step) => (
 					<li
 						class:list={['step', `tone-${step.tone}`, step.i !== undefined && 'main', step.wideOnly && 'wide-only']}
+						data-scrub-step={step.i}
+						data-scrub-follow={step.wideOnly ? escalation : undefined}
 						style={`grid-row: ${step.row} / span ${step.span ?? 1}; grid-column: ${column[step.lane]}; ${step.i !== undefined ? `--i: ${step.i}` : ''}`}
 					>
 						<span class="kicker mono">{step.kicker}</span>
@@ -179,7 +239,7 @@ const column = { me: 1, lead: 2, team: 3 };
 						)}
 						{step.notes?.map((note) => <span class={`note note-${note.kind} mono`}>{note.text}</span>)}
 						{step.inLabel !== undefined || step.i ? (
-							<span class="link vflow" aria-hidden="true">
+							<span class="link vflow" data-scrub-link={step.i !== undefined ? step.i - 1 : undefined} aria-hidden="true">
 								{step.inLabel && <span class="tag mono">{step.inLabel}</span>}
 							</span>
 						) : null}
@@ -187,6 +247,7 @@ const column = { me: 1, lead: 2, team: 3 };
 							<span
 								class:list={['link', link.type, `kind-${link.kind ?? 'main'}`, link.both && 'both', link.i !== undefined && 'lit']}
 								style={`${link.y !== undefined ? `--y: ${link.y}px;` : ''} ${link.i !== undefined ? `--i: ${link.i}` : ''}`}
+								data-scrub-link={link.i}
 								aria-hidden="true"
 							>
 								{link.label && <span class="tag mono">{link.label}</span>}
@@ -198,7 +259,7 @@ const column = { me: 1, lead: 2, team: 3 };
 		</ol>
 	</div>
 
-	<div class="side">
+	<div class="side" data-scrub-step={path.length}>
 		<div class="step tone-me approve">
 			<span class="kicker mono">{copy.side.approve.kicker}</span>
 			<strong class="step-title">{copy.side.approve.title}</strong>
@@ -227,6 +288,8 @@ const column = { me: 1, lead: 2, team: 3 };
 		<li><i class="swatch kind-me"></i>{copy.legend.me}</li>
 		<li><i class="swatch premium"></i>{copy.legend.premium}</li>
 	</ul>
+
+	<ScrollCaptions captions={captions} hint={copy.scrub.hint} outro={copy.scrub.outro} />
 </div>
 
 <style>
@@ -769,10 +832,54 @@ const column = { me: 1, lead: 2, team: 3 };
 
 	}
 
+	/*
+	 * Unfolding with the scroll (src/scripts/scroll-diagrams.ts, which dims the stages ahead): the looping
+	 * highlight stops, the stage under the reading line is ringed and the path behind it stays lit.
+	 */
+	.wf[data-scrub-ready] .step.main::after {
+		transform: scale(1.04);
+		animation: none;
+		transition:
+			opacity var(--duration-base) var(--ease-out),
+			transform var(--duration-base) var(--ease-spring);
+	}
+
+	.wf[data-scrub-ready] .step.main[data-scrub-state='current']::after {
+		opacity: 1;
+		transform: none;
+	}
+
+	.wf[data-scrub-ready] .link:is(.lit, .vflow) {
+		animation: none;
+		transition: color var(--duration-base) var(--ease-out);
+	}
+
+	.link[data-scrub-state='travelled'] {
+		color: color-mix(in srgb, var(--color-lime) 45%, var(--edge));
+	}
+
+	.link[data-scrub-state='fresh'] {
+		color: var(--color-lime);
+	}
+
+	.routes {
+		transition: border-color var(--duration-base) var(--ease-out);
+	}
+
+	.side[data-scrub-state='current'] .routes {
+		border-color: color-mix(in srgb, var(--color-periwinkle) 60%, transparent);
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.step.main::after,
 		.link.lit {
 			animation: none;
+		}
+
+		.wf[data-scrub-ready] .step.main::after,
+		.wf[data-scrub-ready] .link:is(.lit, .vflow),
+		.routes {
+			transition: none;
 		}
 	}
 </style>

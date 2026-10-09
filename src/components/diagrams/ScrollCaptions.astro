@@ -1,0 +1,217 @@
+---
+/**
+ * Caption strip for diagrams that unfold as the reader scrolls (src/scripts/scroll-diagrams.ts).
+ * Put it last inside the diagram's `data-scrub` root: it sticks to the bottom of the screen while the diagram
+ * scrolls by and tells the current stage in one line, with a tick per stage. Hidden until the script runs, so a
+ * page without it shows the diagram alone.
+ *
+ * Stages ahead of the reading line are dimmed here; the diagram draws its own current stage.
+ */
+interface Caption {
+	/** Stage name, after the counter. */
+	label: string;
+	text: string;
+	/** Color of the label and the tick, e.g. `var(--color-mint)`. */
+	accent?: string;
+}
+
+interface Props {
+	captions: Caption[];
+	/** Shown before the first stage: how to make it move. */
+	hint: string;
+	/** Shown once every stage has passed. */
+	outro: Caption;
+}
+
+const { captions, hint, outro } = Astro.props;
+const total = String(captions.length).padStart(2, '0');
+---
+
+<div class="scrub-bar" data-scrub-bar hidden>
+	<div class="scrub-panel">
+		<div class="scrub-captions">
+			<div class="scrub-caption" data-scrub-caption="-1" aria-hidden="true">
+				<span class="scrub-hint mono"><span class="scrub-path">~</span> $ {hint}<span class="scrub-cursor"></span></span>
+			</div>
+			{
+				captions.map((caption, i) => (
+					<div class="scrub-caption" data-scrub-caption={i} style={caption.accent && `--accent: ${caption.accent}`}>
+						<span class="scrub-label mono">
+							<span class="scrub-count">
+								{String(i + 1).padStart(2, '0')}/{total}
+							</span>{' '}
+							{caption.label}
+						</span>
+						<span class="scrub-text">{caption.text}</span>
+					</div>
+				))
+			}
+			<div class="scrub-caption" data-scrub-caption={captions.length} style={outro.accent && `--accent: ${outro.accent}`}>
+				<span class="scrub-label mono">✓ {outro.label}</span>
+				<span class="scrub-text">{outro.text}</span>
+			</div>
+		</div>
+		<div class="scrub-ticks" aria-hidden="true">
+			{captions.map((caption, i) => <i data-scrub-tick={i} style={caption.accent && `--accent: ${caption.accent}`} />)}
+		</div>
+	</div>
+</div>
+
+<script>
+	import '../../scripts/scroll-diagrams';
+</script>
+
+<style>
+	/* Shared primitive: callers' own classes override it (see src/styles/global.css). */
+	@layer base, ui, utilities;
+
+	@layer ui {
+		/* Stages and their followers wait, dimmed, until the reading line reaches them. */
+		:global([data-scrub-ready] :is([data-scrub-step], [data-scrub-follow])) {
+			transition:
+				opacity var(--duration-base) var(--ease-out),
+				filter var(--duration-base) var(--ease-out);
+		}
+
+		:global([data-scrub-ready] :is([data-scrub-step], [data-scrub-follow])[data-scrub-state='ahead']) {
+			opacity: 0.22;
+			filter: saturate(0.3);
+		}
+
+		.scrub-bar {
+			position: sticky;
+			bottom: max(var(--space-3), env(safe-area-inset-bottom));
+			z-index: 2;
+			margin-top: var(--space-5);
+			pointer-events: none;
+		}
+
+		.scrub-panel {
+			--accent: var(--color-lime);
+			max-width: 42rem;
+			margin-inline: auto;
+			padding: 10px 14px 12px;
+			border: 1px solid var(--color-border-raised);
+			border-radius: var(--radius-md);
+			background: color-mix(in srgb, var(--color-surface-raised) 86%, transparent);
+			box-shadow: 0 14px 34px -14px rgb(0 0 0 / 0.8);
+			backdrop-filter: blur(12px);
+		}
+
+		/* All captions share one cell: the strip keeps the height of the longest, so it never jumps. */
+		.scrub-captions {
+			display: grid;
+		}
+
+		.scrub-caption {
+			grid-area: 1 / 1;
+			align-self: center;
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			opacity: 0;
+			transform: translateY(6px);
+			transition:
+				opacity var(--duration-fast) var(--ease-out),
+				transform var(--duration-base) var(--ease-out);
+		}
+
+		.scrub-caption[data-scrub-state='current'] {
+			opacity: 1;
+			transform: none;
+			transition-delay: 0.08s;
+		}
+
+		.scrub-label,
+		.scrub-hint {
+			font-size: var(--text-2xs);
+			line-height: 1.4;
+			color: var(--accent);
+		}
+
+		.scrub-count {
+			color: var(--color-text-faint);
+		}
+
+		.scrub-text {
+			font-size: 0.875rem;
+			line-height: 1.45;
+			color: var(--color-text-body);
+		}
+
+		.scrub-hint {
+			align-self: flex-start;
+			font-size: var(--text-sm);
+			color: var(--color-text-muted);
+		}
+
+		.scrub-path {
+			color: var(--color-lime);
+		}
+
+		.scrub-cursor {
+			display: inline-block;
+			width: 0.6em;
+			height: 1.15em;
+			margin-left: 3px;
+			vertical-align: -0.2em;
+			background: var(--color-lime);
+			animation: blink 1s steps(1) infinite;
+		}
+
+		/* One tick per stage: done ones keep their color, the current one stretches. */
+		.scrub-ticks {
+			display: flex;
+			gap: 4px;
+			margin-top: 9px;
+		}
+
+		.scrub-ticks i {
+			flex: 1;
+			height: 3px;
+			border-radius: 2px;
+			background: var(--color-border-strong);
+			transition:
+				flex-grow var(--duration-base) var(--ease-spring),
+				background-color var(--duration-fast) var(--ease-out);
+		}
+
+		.scrub-ticks i[data-scrub-state='done'] {
+			background: color-mix(in srgb, var(--accent, var(--color-lime)) 55%, var(--color-border-strong));
+		}
+
+		.scrub-ticks i[data-scrub-state='current'] {
+			flex-grow: 3;
+			background: var(--accent, var(--color-lime));
+		}
+
+		/* Phones: the strip sits over the stages to come, keep it small. */
+		@media (max-width: 640px) {
+			.scrub-panel {
+				padding: 8px 12px 10px;
+			}
+
+			.scrub-text {
+				font-size: var(--text-sm);
+				line-height: 1.4;
+			}
+
+			.scrub-ticks {
+				gap: 3px;
+				margin-top: 7px;
+			}
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			:global([data-scrub-ready] :is([data-scrub-step], [data-scrub-follow])),
+			.scrub-caption,
+			.scrub-ticks i {
+				transition: none;
+			}
+
+			.scrub-cursor {
+				animation: none;
+			}
+		}
+	}
+</style>
