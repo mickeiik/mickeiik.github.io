@@ -1,0 +1,56 @@
+---
+/**
+ * A figure that takes the whole article width, for diagrams and visuals that need room.
+ * Use it in .mdx posts:
+ *
+ *   import WideFigure from '../../../components/blog/WideFigure.astro';
+ *
+ *   <WideFigure caption="Figure 1. What it shows.">
+ *     <SomeDiagram />
+ *   </WideFigure>
+ *
+ * Beside the side column it spans from over the article card's left edge to the column's right edge, square on
+ * the card's side; the sticky column stops above it and resumes below it (src/scripts/wide-figures.ts).
+ * Stacked (phones, tablets) it stays inside the card. The article layout sets where it reaches through the
+ * `--wide-*` variables (src/views/ArticleView.astro); elsewhere it simply fills its container.
+ *
+ * The frame (background, border, corners, inner spacing) is drawn here, so the content only draws itself.
+ * The caption stays in the text column.
+ */
+interface Props {
+	caption?: string;
+}
+
+const { caption } = Astro.props;
+---
+
+<figure class="wide-figure">
+	<div class="frame" data-wide-figure>
+		<slot />
+	</div>
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+	.wide-figure {
+		margin-inline: calc(-1 * var(--wide-reach-start, 0px)) calc(-1 * var(--wide-reach-end, 0px));
+	}
+
+	.frame {
+		position: relative;
+		padding: var(--space-5) calc(var(--wide-inset, 21px) - 1px);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		border-start-start-radius: var(--wide-start-radius, var(--radius-lg));
+		border-end-start-radius: var(--wide-start-radius, var(--radius-lg));
+		background: var(--color-code-bg);
+	}
+
+	/* Back in the text column. */
+	figcaption {
+		margin: 12px var(--wide-reach-end, 0px) 0 var(--wide-reach-start, 0px);
+		font-size: 0.875rem;
+		font-style: italic;
+		color: var(--color-text-muted);
+	}
+</style>

@@ -2,8 +2,8 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 const blog = defineCollection({
-	// Posts live in src/content/blog/<lang>/<slug>.md; the same slug in both folders links translations.
-	loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+	// Posts live in src/content/blog/<lang>/<slug>.md (or .mdx to use components); the same slug in both folders links translations.
+	loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
 	schema: z.object({
 		title: z.string(),
 		description: z.string(),

@@ -62,7 +62,7 @@ const next = seriesNext
 			<Content />
 		</Tile>
 
-		<aside class="aside">
+		<aside class="aside" data-article-aside>
 			<div class="slot-toc"><TableOfContents headings={headings} lang={lang} delay={0.2} /></div>
 			{series && <div class="slot-series"><SeriesNav series={series} current={post} lang={lang} delay={0.27} /></div>}
 			{post.data.aiAssisted && <div class="slot-ai"><AiNote lang={lang} delay={0.34} /></div>}
@@ -76,19 +76,35 @@ const next = seriesNext
 <script>
 	import '../scripts/toc';
 	import '../scripts/code-copy';
+	import '../scripts/wide-figures';
 </script>
 
 <style>
+	/* Side by side above 960px, stacked below (see the media query). Never wraps on its own. */
 	.layout {
+		--aside-width: 290px;
 		display: flex;
-		flex-wrap: wrap;
 		align-items: flex-start;
 		gap: var(--grid-gap);
 		margin-top: var(--grid-gap);
 	}
 
 	.layout :global(.body) {
-		flex: 999 1 560px;
+		/* Tile padding="lg" */
+		--pad: clamp(var(--space-7), 5vw, var(--space-16));
+		--bleed: calc(var(--pad) - 16px);
+		/*
+		 * Where wide figures go (src/components/blog/WideFigure.astro): the whole article width, from over the
+		 * card's left edge (its 1px border included) to the side column's right edge, square where they cover
+		 * the card's edge, with their content inset like the side column's (border + Tile padding="sm").
+		 */
+		--wide-reach-start: calc(var(--pad) + 1px);
+		--wide-reach-end: calc(var(--pad) + 1px + var(--grid-gap) + var(--aside-width));
+		--wide-start-radius: 0;
+		--wide-inset: calc(var(--space-5) + 1px);
+		position: relative;
+		z-index: 1;
+		flex: 1 1 560px;
 		min-width: 0;
 	}
 
@@ -97,13 +113,15 @@ const next = seriesNext
 		position: sticky;
 		top: var(--header-offset);
 		display: flex;
-		flex: 1 1 290px;
+		flex: 0 0 var(--aside-width);
 		flex-direction: column;
 		gap: var(--grid-gap);
 		min-width: 0;
 		max-height: calc(100vh - var(--header-offset) - 16px);
 		overflow-y: auto;
 		scrollbar-width: none;
+		/* Wide figures push the column out of their way (src/scripts/wide-figures.ts sets the transform). */
+		will-change: transform;
 	}
 
 	.aside::-webkit-scrollbar {
@@ -114,19 +132,24 @@ const next = seriesNext
 		display: none;
 	}
 
-	/* On phones: AI note and contents first, then the article, then the series and soundtrack. */
-	@media (max-width: 760px) {
+	/*
+	 * Stacked on phones and tablets, where the aside would squeeze the article:
+	 * AI note and contents first, then the article, then the series and soundtrack.
+	 */
+	@media (max-width: 960px) {
 		.layout {
 			flex-direction: column;
 			align-items: stretch;
-			gap: var(--space-3);
-			margin-top: var(--space-3);
 		}
 
 		.layout :global(.body) {
+			/* Stacked: wide figures stay inside the card, 16px from its edges, content lined up with the text. */
+			--wide-reach-start: var(--bleed);
+			--wide-reach-end: var(--bleed);
+			--wide-start-radius: var(--radius-lg);
+			--wide-inset: var(--bleed);
 			flex: none;
 			order: 3;
-			padding: 26px 22px;
 		}
 
 		.aside {
@@ -147,6 +170,18 @@ const next = seriesNext
 
 		.slot-soundtrack {
 			order: 5;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.layout {
+			gap: var(--space-3);
+			margin-top: var(--space-3);
+		}
+
+		.layout :global(.body) {
+			--pad: 22px;
+			padding: 26px var(--pad);
 		}
 	}
 </style>

@@ -1,0 +1,778 @@
+---
+import type { Lang } from '../../i18n/utils';
+
+/**
+ * Article figure: how a task moved through my OpenCode agent team (Engflow series, part 1).
+ * Meant to sit in a <WideFigure>, which draws the frame around it.
+ * Rules come from the agent prompts in ~/.config/opencode/agents, not from a recorded run.
+ *
+ * Wide: three lanes (me, lead, subagents) on a grid; connectors are drawn in CSS relative to each card,
+ * so they follow the cards when text wraps. Narrow (container under 640px): one column, read top to
+ * bottom, with the correction loops and escalations shown as notes on the cards.
+ */
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+type Lane = 'me' | 'lead' | 'team';
+type Tone = 'me' | 'lead' | 'builder' | 'reviewer';
+type Kind = 'main' | 'loop' | 'me';
+interface Link {
+	type: 'down' | 'right' | 'left' | 'elbow' | 'loop-up';
+	kind?: Kind;
+	label?: string;
+	/** Vertical offset from the card top (right, left, loop-up). */
+	y?: number;
+	/** Arrowheads at both ends (left). */
+	both?: boolean;
+	/** Position on the default path whose step this connector leaves. */
+	i?: number;
+}
+interface Note {
+	kind: 'loop' | 'me';
+	text: string;
+}
+interface Step {
+	id: string;
+	lane: Lane;
+	tone: Tone;
+	row: number;
+	span?: number;
+	kicker: string;
+	title: string;
+	body?: string;
+	items?: string[];
+	/** Position on the default path (animated highlight); absent for side steps. */
+	i?: number;
+	links?: Link[];
+	/** Label on the incoming arrow in the one-column layout. */
+	inLabel?: string;
+	notes?: Note[];
+	/** Only shown in the three-lane layout (its arrows become notes in one column). */
+	wideOnly?: boolean;
+}
+
+const copy = {
+	en: {
+		title: 'How a task moved through my agent team',
+		lanes: { me: 'me', lead: 'lead', team: 'subagents' },
+		escalate: 'not clean after 2 rounds: I step in',
+		steps: [
+			{ id: 'me1', kicker: 'me', title: 'Start', body: '“Implement issue #X”, then answer questions.' },
+			{ id: 'l1', kicker: 'lead · 01', title: 'Clarify', body: 'Goal, constraints and acceptance criteria, with me.' },
+			{ id: 'l2', kicker: 'lead · 02', title: 'Gather and brief', body: 'Reads code and docs itself, writes one self-contained brief, re-reads it once.' },
+			{ id: 'b', kicker: 'builder', title: 'Implement + check', body: 'Runs the brief’s checks; fixes and reruns up to 3 rounds per failure.' },
+			{ id: 'l3', kicker: 'lead · 03', title: 'Verify integration', body: 'Full repo checks and the Definition of Done; fixes small failures itself.' },
+			{ id: 'l4', kicker: 'lead · 04', title: 'Freeze the revision', body: 'WIP commit; reviewers must find that exact SHA.' },
+			{ id: 'r', kicker: 'reviewers · in parallel', title: 'Independent review', items: ['R1 acceptance, reproducibility', 'R2 robustness', 'R3 tests, diff hygiene'] },
+			{ id: 'l5', kicker: 'lead · 05', title: 'Consolidate and fix', body: 'Dedupes findings, routes fixes, re-verifies, re-reviews only the flagged mandates.' },
+			{ id: 'l6', kicker: 'lead · 06', title: 'Write the evidence', body: 'From results it observed, committed as a new revision.' },
+			{ id: 'a', kicker: 'reviewer · fresh', title: 'Audit the evidence', body: 'Re-runs every recorded command and compares the numbers.' },
+			{ id: 'l7', kicker: 'lead · 07', title: 'Close', body: 'Close-out commands, commit or PR; its own patches get an independent review first.' },
+			{ id: 'me3', kicker: 'me', title: 'Get the result', body: 'Commit or PR, with its evidence.' },
+			{ id: 'me2', kicker: 'me', title: 'Step in', body: 'Still not clean after 2 rounds: I decide how to proceed.' },
+		],
+		labels: { brief: 'brief', missing: 'MISSING', report: 'report', rework: 'rework: new Builder', sha: 'SHA', findings: 'findings', rereview: 're-review the fix diff', newSha: 'new SHA', mismatch: 'mismatch', clean: 'clean' },
+		notes: { missing: 'MISSING: back to the brief', rework: 'rework: a new Builder session', rereview: 're-review the fix diff', mismatch: 'mismatch: fix and re-audit' },
+		side: {
+			title: 'other routes · only the lead calls them, results come back to it',
+			approve: { kicker: 'me', title: 'Approve', body: 'Each Sage or Craftsman call, one at a time.' },
+			agents: [
+				{ kicker: 'thinker', title: 'Expert', body: 'Decisions and trade-offs, read-only.', tone: 'thinker', premium: false },
+				{ kicker: 'thinker · premium', title: 'Sage', body: 'Hard, high-stakes decisions, read-only.', tone: 'thinker', premium: true },
+				{ kicker: 'builder · premium', title: 'Craftsman', body: 'Design-sensitive builds; runs no commands.', tone: 'builder', premium: true },
+				{ kicker: 'low-trust', title: 'Mercenary', body: 'Low-stakes, non-sensitive work only.', tone: 'muted', premium: false },
+			],
+		},
+		legend: { main: 'default path', loop: 'correction loop', me: 'I step in', premium: 'premium: my approval per call' },
+	},
+	fr: {
+		title: 'Le parcours d’une tâche dans mon équipe d’agents',
+		lanes: { me: 'moi', lead: 'lead', team: 'sous-agents' },
+		escalate: 'pas propre après 2 tours : j’interviens',
+		steps: [
+			{ id: 'me1', kicker: 'moi', title: 'Lancer', body: '« Implémente l’issue #X », puis je réponds aux questions.' },
+			{ id: 'l1', kicker: 'lead · 01', title: 'Clarifier', body: 'Objectif, contraintes et critères d’acceptation, avec moi.' },
+			{ id: 'l2', kicker: 'lead · 02', title: 'Explorer et briefer', body: 'Lit le code et la doc lui-même, rédige un brief autonome, le relit une fois.' },
+			{ id: 'b', kicker: 'builder', title: 'Implémenter + vérifier', body: 'Lance les vérifications du brief ; corrige et relance, 3 tours max par échec.' },
+			{ id: 'l3', kicker: 'lead · 03', title: 'Vérifier l’intégration', body: 'Vérifications complètes et Definition of Done ; corrige lui-même les petits échecs.' },
+			{ id: 'l4', kicker: 'lead · 04', title: 'Figer la révision', body: 'Commit WIP ; les reviewers doivent retrouver ce SHA exact.' },
+			{ id: 'r', kicker: 'reviewers · en parallèle', title: 'Revue indépendante', items: ['R1 acceptation, reproductibilité', 'R2 robustesse', 'R3 tests, hygiène du diff'] },
+			{ id: 'l5', kicker: 'lead · 05', title: 'Consolider et corriger', body: 'Dédoublonne les remarques, répartit les corrections, revérifie, refait relire les mandats concernés.' },
+			{ id: 'l6', kicker: 'lead · 06', title: 'Écrire les preuves', body: 'À partir des résultats qu’il a observés, commitées dans une nouvelle révision.' },
+			{ id: 'a', kicker: 'reviewer · neuf', title: 'Auditer les preuves', body: 'Relance chaque commande enregistrée et compare les chiffres.' },
+			{ id: 'l7', kicker: 'lead · 07', title: 'Clore', body: 'Commandes de clôture, commit ou PR ; ses propres correctifs passent d’abord en revue.' },
+			{ id: 'me3', kicker: 'moi', title: 'Recevoir le résultat', body: 'Commit ou PR, avec ses preuves.' },
+			{ id: 'me2', kicker: 'moi', title: 'Intervenir', body: 'Toujours pas propre après 2 tours : je décide de la suite.' },
+		],
+		labels: { brief: 'brief', missing: 'MISSING', report: 'rapport', rework: 'refonte : nouveau Builder', sha: 'SHA', findings: 'remarques', rereview: 'relire le diff du correctif', newSha: 'nouveau SHA', mismatch: 'écart', clean: 'propre' },
+		notes: { missing: 'MISSING : retour au brief', rework: 'refonte : nouvelle session de Builder', rereview: 'relire le diff du correctif', mismatch: 'écart : corriger et réauditer' },
+		side: {
+			title: 'autres routes · seul le lead les appelle, les résultats lui reviennent',
+			approve: { kicker: 'moi', title: 'Approuver', body: 'Chaque appel à Sage ou Craftsman, un par un.' },
+			agents: [
+				{ kicker: 'penseur', title: 'Expert', body: 'Décisions et compromis, lecture seule.', tone: 'thinker', premium: false },
+				{ kicker: 'penseur · premium', title: 'Sage', body: 'Décisions difficiles à fort enjeu, lecture seule.', tone: 'thinker', premium: true },
+				{ kicker: 'builder · premium', title: 'Craftsman', body: 'Implémentations sensibles au design ; aucune commande.', tone: 'builder', premium: true },
+				{ kicker: 'faible confiance', title: 'Mercenary', body: 'Travail à faible enjeu et non sensible uniquement.', tone: 'muted', premium: false },
+			],
+		},
+		legend: { main: 'chemin par défaut', loop: 'boucle de correction', me: 'j’interviens', premium: 'premium : mon accord à chaque appel' },
+	},
+}[lang];
+
+const text = Object.fromEntries(copy.steps.map((s) => [s.id, s]));
+const l = copy.labels;
+
+// Layout and connectors are shared by both languages.
+const layout: Omit<Step, 'kicker' | 'title' | 'body' | 'items'>[] = [
+	{ id: 'me1', lane: 'me', tone: 'me', row: 1, i: 0 },
+	{ id: 'l1', lane: 'lead', tone: 'lead', row: 1, i: 1, links: [{ type: 'left', y: 34, both: true, i: 0 }, { type: 'down', i: 1 }] },
+	{ id: 'l2', lane: 'lead', tone: 'lead', row: 2, i: 2, links: [{ type: 'right', y: 30, label: l.brief, i: 2 }] },
+	{ id: 'b', lane: 'team', tone: 'builder', row: 2, i: 3, inLabel: l.brief, notes: [{ kind: 'loop', text: copy.notes.missing }],
+		links: [{ type: 'left', kind: 'loop', y: 72, label: l.missing }, { type: 'elbow', label: l.report, i: 3 }] },
+	{ id: 'l3', lane: 'lead', tone: 'lead', row: 3, i: 4, inLabel: l.report, notes: [{ kind: 'loop', text: copy.notes.rework }],
+		links: [{ type: 'loop-up', kind: 'loop', y: 82, label: l.rework }, { type: 'down', i: 4 }] },
+	{ id: 'l4', lane: 'lead', tone: 'lead', row: 4, i: 5, links: [{ type: 'right', y: 30, label: l.sha, i: 5 }] },
+	{ id: 'r', lane: 'team', tone: 'reviewer', row: 4, i: 6, inLabel: l.sha, links: [{ type: 'elbow', label: l.findings, i: 6 }] },
+	{ id: 'l5', lane: 'lead', tone: 'lead', row: 5, i: 7, inLabel: l.findings,
+		notes: [{ kind: 'loop', text: copy.notes.rereview }, { kind: 'me', text: copy.escalate }],
+		links: [{ type: 'loop-up', kind: 'loop', y: 82, label: l.rereview }, { type: 'left', kind: 'me', y: 40 }, { type: 'down', i: 7 }] },
+	{ id: 'l6', lane: 'lead', tone: 'lead', row: 6, i: 8, links: [{ type: 'right', y: 30, label: l.newSha, i: 8 }, { type: 'left', kind: 'me', y: 40 }] },
+	{ id: 'a', lane: 'team', tone: 'reviewer', row: 6, i: 9, inLabel: l.newSha,
+		notes: [{ kind: 'loop', text: copy.notes.mismatch }, { kind: 'me', text: copy.escalate }],
+		links: [{ type: 'left', kind: 'loop', y: 72, label: l.mismatch }, { type: 'elbow', label: l.clean, i: 9 }] },
+	{ id: 'l7', lane: 'lead', tone: 'lead', row: 7, i: 10, inLabel: l.clean, links: [{ type: 'left', y: 40, i: 10 }] },
+	{ id: 'me3', lane: 'me', tone: 'me', row: 7, i: 11 },
+	{ id: 'me2', lane: 'me', tone: 'me', row: 5, span: 2, wideOnly: true },
+];
+const steps: Step[] = layout.map((s) => ({ ...s, ...text[s.id] }) as Step);
+const column = { me: 1, lead: 2, team: 3 };
+---
+
+<div class="wf">
+	<p class="wf-title">{copy.title}</p>
+
+	<div class="board">
+		<div class="lanes" aria-hidden="true">
+			{(['me', 'lead', 'team'] as const).map((lane) => <div class={`lane lane-${lane}`}><span class="mono">{copy.lanes[lane]}</span></div>)}
+		</div>
+
+		<ol class="flow">
+			{
+				steps.map((step) => (
+					<li
+						class:list={['step', `tone-${step.tone}`, step.i !== undefined && 'main', step.wideOnly && 'wide-only']}
+						style={`grid-row: ${step.row} / span ${step.span ?? 1}; grid-column: ${column[step.lane]}; ${step.i !== undefined ? `--i: ${step.i}` : ''}`}
+					>
+						<span class="kicker mono">{step.kicker}</span>
+						<strong class="step-title">{step.title}</strong>
+						{step.body && <span class="desc">{step.body}</span>}
+						{step.items && (
+							<ul class="items">
+								{step.items.map((item) => (
+									<li>{item}</li>
+								))}
+							</ul>
+						)}
+						{step.notes?.map((note) => <span class={`note note-${note.kind} mono`}>{note.text}</span>)}
+						{step.inLabel !== undefined || step.i ? (
+							<span class="link vflow" aria-hidden="true">
+								{step.inLabel && <span class="tag mono">{step.inLabel}</span>}
+							</span>
+						) : null}
+						{step.links?.map((link) => (
+							<span
+								class:list={['link', link.type, `kind-${link.kind ?? 'main'}`, link.both && 'both', link.i !== undefined && 'lit']}
+								style={`${link.y !== undefined ? `--y: ${link.y}px;` : ''} ${link.i !== undefined ? `--i: ${link.i}` : ''}`}
+								aria-hidden="true"
+							>
+								{link.label && <span class="tag mono">{link.label}</span>}
+							</span>
+						))}
+					</li>
+				))
+			}
+		</ol>
+	</div>
+
+	<div class="side">
+		<div class="step tone-me approve">
+			<span class="kicker mono">{copy.side.approve.kicker}</span>
+			<strong class="step-title">{copy.side.approve.title}</strong>
+			<span class="desc">{copy.side.approve.body}</span>
+			<span class="link right kind-me both" style="--y: 50px" aria-hidden="true"></span>
+		</div>
+		<div class="routes">
+			<p class="mono routes-title">{copy.side.title}</p>
+			<ul class="route-list">
+				{
+					copy.side.agents.map((agent) => (
+						<li class:list={['step', `tone-${agent.tone}`, agent.premium && 'premium']}>
+							<span class="kicker mono">{agent.kicker}</span>
+							<strong class="step-title">{agent.title}</strong>
+							<span class="desc">{agent.body}</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+
+	<ul class="legend" aria-hidden="true">
+		<li><i class="swatch kind-main"></i>{copy.legend.main}</li>
+		<li><i class="swatch kind-loop"></i>{copy.legend.loop}</li>
+		<li><i class="swatch kind-me"></i>{copy.legend.me}</li>
+		<li><i class="swatch premium"></i>{copy.legend.premium}</li>
+	</ul>
+</div>
+
+<style>
+	.wf {
+		--col-gap: 36px;
+		--row-gap: 46px;
+		--edge: var(--color-text-faint);
+		--loop: #f5c76b;
+		--me: var(--color-coral);
+		--beat: 1.25s;
+		--cycle: 17s;
+		container-type: inline-size;
+		/* Lanes and panels bleed 10px past the grid: this puts their edges on the frame's inset (WideFigure). */
+		padding-inline: 10px;
+		font-size: 0.875rem;
+		line-height: 1.45;
+	}
+
+	.wf-title {
+		margin: 0 0 18px;
+		font-family: var(--font-display), sans-serif;
+		font-size: 1.25rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		color: var(--color-text);
+	}
+
+	/* Three lanes: the board grid and the lane backgrounds share one column template. */
+	.board {
+		position: relative;
+	}
+
+	.lanes,
+	.flow {
+		display: grid;
+		grid-template-columns: minmax(112px, 0.52fr) minmax(0, 1fr) minmax(0, 0.95fr);
+		column-gap: var(--col-gap);
+	}
+
+	.lanes {
+		position: absolute;
+		inset: 0;
+	}
+
+	.lane {
+		margin: 0 -10px;
+		padding: 10px 12px;
+		border: 1px solid var(--color-border);
+		border-radius: 16px;
+		background: var(--color-surface);
+	}
+
+	.lane span {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 0.75rem;
+	}
+
+	.lane span::before {
+		content: '';
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	.lane-me {
+		color: var(--me);
+	}
+
+	.lane-lead {
+		color: var(--color-lime);
+	}
+
+	.lane-team {
+		color: var(--color-mint);
+	}
+
+	.flow {
+		position: relative;
+		row-gap: var(--row-gap);
+		margin: 0;
+		padding: 40px 0 12px;
+		list-style: none;
+	}
+
+	/* Cards */
+	.step {
+		--accent: var(--color-lime);
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+		margin: 0;
+		padding: 10px 13px 12px;
+		border: 1px solid var(--color-border-raised);
+		border-radius: 13px;
+		background: var(--color-surface-raised);
+	}
+
+	.flow > .step {
+		margin: 0;
+	}
+
+	.tone-me {
+		--accent: var(--me);
+	}
+
+	.tone-builder {
+		--accent: var(--color-mint);
+	}
+
+	.tone-reviewer {
+		--accent: var(--color-peach);
+	}
+
+	.tone-thinker {
+		--accent: var(--color-periwinkle);
+	}
+
+	.tone-muted {
+		--accent: var(--color-text-muted);
+	}
+
+	.kicker {
+		font-size: 0.6875rem;
+		color: var(--accent);
+	}
+
+	.step-title {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--color-text);
+	}
+
+	.desc,
+	.items {
+		color: var(--color-text-soft);
+	}
+
+	.items {
+		margin: 2px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.items li {
+		margin: 0;
+		padding: 0;
+	}
+
+	:global(.prose) .wf .items li + li {
+		margin-top: 0;
+	}
+
+	/* Notes carry the loops and escalations in one column; screen readers get them in every layout. */
+	.note {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	/* Highlight travelling along the default path */
+	.step.main::after {
+		content: '';
+		position: absolute;
+		inset: -1px;
+		border: 2px solid var(--accent);
+		border-radius: inherit;
+		background: color-mix(in srgb, var(--accent) 9%, transparent);
+		opacity: 0;
+		pointer-events: none;
+		animation: wf-step var(--cycle) ease-in-out infinite;
+		animation-delay: calc(var(--i) * var(--beat));
+	}
+
+	@keyframes wf-step {
+		0%,
+		9%,
+		100% {
+			opacity: 0;
+		}
+		1%,
+		6.5% {
+			opacity: 1;
+		}
+	}
+
+	/* Connectors, drawn from the card they leave */
+	.link {
+		position: absolute;
+		z-index: 1;
+		color: var(--edge);
+		pointer-events: none;
+	}
+
+	.link::after,
+	.link.both::before {
+		content: '';
+		position: absolute;
+		width: 10px;
+		height: 10px;
+		background: currentColor;
+	}
+
+	.kind-loop {
+		color: var(--loop);
+	}
+
+	.kind-me {
+		color: var(--me);
+	}
+
+	.tag {
+		position: absolute;
+		font-size: 0.6875rem;
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	.link.lit {
+		animation: wf-link var(--cycle) linear infinite;
+		animation-delay: calc(var(--i) * var(--beat) + var(--beat) * 0.7);
+	}
+
+	@keyframes wf-link {
+		0%,
+		5%,
+		100% {
+			color: var(--edge);
+		}
+		0.6%,
+		4% {
+			color: var(--color-lime);
+		}
+	}
+
+	/* down: lead card to the next lead card */
+	.link.down {
+		top: 100%;
+		left: 50%;
+		height: calc(var(--row-gap) - 3px);
+		border-left: 2px solid;
+	}
+
+	.link.down::after {
+		bottom: -2px;
+		left: -6px;
+		clip-path: polygon(0 0, 100% 0, 50% 100%);
+	}
+
+	/* right / left: across the gap to the next lane */
+	.link.right,
+	.link.left {
+		top: var(--y);
+		width: calc(var(--col-gap) - 3px);
+		border-top: 2px solid;
+	}
+
+	.link.right {
+		left: 100%;
+	}
+
+	.link.left {
+		right: 100%;
+	}
+
+	.link.right::after,
+	.link.left.both::before {
+		top: -6px;
+		right: -3px;
+		clip-path: polygon(0 0, 100% 50%, 0 100%);
+	}
+
+	.link.left::after,
+	.link.right.both::before {
+		top: -6px;
+		left: -3px;
+		clip-path: polygon(100% 0, 0 50%, 100% 100%);
+	}
+
+	.link.right.both,
+	.link.left.both {
+		width: calc(var(--col-gap) - 8px);
+	}
+
+	.link.right.both {
+		left: calc(100% + 4px);
+	}
+
+	.link.left.both {
+		right: calc(100% + 4px);
+	}
+
+	.link.right .tag,
+	.link.left .tag {
+		left: 50%;
+		bottom: 5px;
+		transform: translateX(-50%);
+	}
+
+	.kind-loop.left .tag {
+		top: 7px;
+		bottom: auto;
+	}
+
+	/* Only the drawn side changes style: a style on every side would draw a box. */
+	.link.kind-loop:is(.left, .right) {
+		border-top-style: dashed;
+	}
+
+	.link.kind-me:is(.left, .right) {
+		border-top-style: dotted;
+	}
+
+	/* elbow: subagent card down into the next row, then left to the lead card */
+	.link.elbow {
+		top: 100%;
+		right: 50%;
+		width: calc(50% + var(--col-gap) - 3px);
+		height: calc(var(--row-gap) + 26px);
+		border-right: 2px solid;
+		border-bottom: 2px solid;
+		border-bottom-right-radius: 12px;
+	}
+
+	.link.elbow::after {
+		bottom: -6px;
+		left: -3px;
+		clip-path: polygon(100% 0, 0 50%, 100% 100%);
+	}
+
+	.link.elbow .tag {
+		top: 8px;
+		left: calc(100% + 8px);
+	}
+
+	/* loop-up: lead card right, then up into the subagent card above */
+	.link.loop-up {
+		left: 100%;
+		top: calc(-1 * var(--row-gap) + 3px);
+		width: calc(var(--col-gap) + 44px);
+		height: calc(var(--row-gap) - 3px + var(--y));
+		border-right: 2px dashed;
+		border-bottom: 2px dashed;
+		border-bottom-right-radius: 12px;
+	}
+
+	.link.loop-up::after {
+		top: -3px;
+		right: -6px;
+		clip-path: polygon(50% 0, 100% 100%, 0 100%);
+	}
+
+	.link.loop-up .tag {
+		top: 8px;
+		right: 8px;
+		max-width: calc(var(--col-gap) + 30px);
+		text-align: right;
+		white-space: normal;
+	}
+
+	/* vflow: incoming arrow in the one-column layout only */
+	.link.vflow {
+		display: none;
+	}
+
+	/* Side routes */
+	.side {
+		display: grid;
+		grid-template-columns: minmax(112px, 0.52fr) minmax(0, 1.95fr);
+		column-gap: var(--col-gap);
+		align-items: center;
+		margin-top: 22px;
+	}
+
+	.routes {
+		margin: 0 -10px;
+		padding: 10px 12px 12px;
+		border: 1px solid var(--color-border);
+		border-radius: 16px;
+		background: var(--color-surface);
+	}
+
+	.routes-title {
+		margin: 0 0 10px;
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.route-list {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	:global(.prose) .wf .route-list > li + li {
+		margin-top: 0;
+	}
+
+	.premium {
+		border: 1px dashed var(--me);
+	}
+
+	/* Stops short of the routes panel, which bleeds into the gap. */
+	.approve .link {
+		width: calc(var(--col-gap) - 18px);
+	}
+
+	/* Legend */
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 20px;
+		margin: 16px 4px 0;
+		padding: 0;
+		list-style: none;
+		font-size: 0.8125rem;
+		color: var(--color-text-muted);
+	}
+
+	:global(.prose) .wf .legend li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+	}
+
+	.swatch {
+		width: 26px;
+		height: 0;
+		border-top: 2px solid var(--edge);
+	}
+
+	.swatch.kind-loop {
+		border-top: 2px dashed var(--loop);
+	}
+
+	.swatch.kind-me {
+		border-top: 2px dotted var(--me);
+	}
+
+	.swatch.premium {
+		width: 22px;
+		height: 14px;
+		border: 1px dashed var(--me);
+		border-radius: 4px;
+	}
+
+	@container (min-width: 760px) {
+		.route-list {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+
+	/* One column: read top to bottom; loops and escalations become notes on the cards. */
+	@container (max-width: 640px) {
+		.lanes,
+		.wide-only,
+		.link:not(.vflow) {
+			display: none;
+		}
+
+		.flow {
+			display: flex;
+			flex-direction: column;
+			gap: 30px;
+			padding-top: 0;
+		}
+
+		.step {
+			border-left: 3px solid var(--accent);
+		}
+
+		.link.vflow {
+			display: block;
+			bottom: calc(100% + 2px);
+			left: 22px;
+			height: 26px;
+			border-left: 2px solid;
+		}
+
+		.flow > .step:first-child .vflow {
+			display: none;
+		}
+
+		.link.vflow::after {
+			bottom: -2px;
+			left: -6px;
+			clip-path: polygon(0 0, 100% 0, 50% 100%);
+		}
+
+		.link.vflow .tag {
+			top: 50%;
+			left: 12px;
+			transform: translateY(-50%);
+		}
+
+		.note {
+			position: static;
+			width: auto;
+			height: auto;
+			overflow: visible;
+			clip-path: none;
+			white-space: normal;
+			align-self: flex-start;
+			margin-top: 6px;
+			padding: 2px 8px;
+			border: 1px dashed currentColor;
+			border-radius: 6px;
+			font-size: 0.6875rem;
+		}
+
+		.note-loop {
+			color: var(--loop);
+		}
+
+		.note-me {
+			color: var(--me);
+		}
+
+		.side {
+			grid-template-columns: 1fr;
+			row-gap: 12px;
+		}
+
+		.routes {
+			margin: 0;
+		}
+
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.step.main::after,
+		.link.lit {
+			animation: none;
+		}
+	}
+</style>

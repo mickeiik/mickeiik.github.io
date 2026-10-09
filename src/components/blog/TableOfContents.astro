@@ -132,7 +132,8 @@ const number = (i: number) => String(i + 1).padStart(2, '0');
 		color: var(--color-lime);
 	}
 
-	@media (max-width: 760px) {
+	/* Collapsible above the article whenever the layout is stacked (see ArticleView). */
+	@media (max-width: 960px) {
 		.toc {
 			padding: 6px;
 			border-radius: 22px;

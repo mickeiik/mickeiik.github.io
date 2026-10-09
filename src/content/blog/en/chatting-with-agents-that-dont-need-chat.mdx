@@ -1,0 +1,115 @@
+---
+title: "Chatting with agents that don't need chat"
+description: 'Coding agents now work mostly on their own, yet we still drive them through chat. Where Engflow comes from, the agent team I had configured, and what I could not see while it worked.'
+pubDate: 2026-10-09
+tags: ['engflow', 'ai', 'agents', 'workflow']
+draft: true
+series: { id: 'engflow', part: 1 }
+---
+
+import WideFigure from '../../../components/blog/WideFigure.astro';
+import AgentWorkflow from '../../../components/diagrams/AgentWorkflow.astro';
+
+To work with LLMs, we've made them conversational.
+
+OpenCode, Pi, Claude Code, Codex. These agent harnesses are built around chat interfaces: a conversation between us and a model. At each turn, the model receives the conversation history so it can continue from there.
+
+We gave them tools, MCPs, and skills, and taught them how to use them to do more on their own. We even gave them tools to create other agents they can talk to.
+
+As they got better, they became more autonomous, and we slowly took a step back.
+
+We're moving from intense back-and-forth conversations to sharing our needs and goals and letting them work. They can bring in other agents, give them instructions, check their work, test the result, and make corrections until the goal is met.
+
+In that case, is an interface centered around that back-and-forth conversation still the best fit?
+
+In this series, I'd like to explore that question by creating an environment where I can experiment with everything around the model conversation:
+
+- how work is defined, started, and organized
+- how agents receive context and coordinate
+- how to observe progress and understand the results
+- when and how I intervene
+- how different workflows can be tested and evaluated
+
+I'm calling that experiment Engflow. In this first article, I'll explain where the idea comes from and walk through the coding workflow I had been using.
+
+From there, we'll work and learn together as I build it.
+
+## The team I had configured
+
+In my setup, each agent had a role:
+
+| Agent | Its job, in plain language |
+|---|---|
+| **Lead** | Understand the request, organize the work, verify the integrated result, and report back. |
+| **Builder** | Implement a defined piece of work and run its checks. |
+| **Expert** | Advise on a technical decision. |
+| **Reviewer** | Independently inspect the result and challenge its claims. |
+| **Sage** | Provide stronger, more expensive reasoning, only with my approval. |
+| **Craftsman** | Provide premium implementation help, only with my approval and without permission to run commands. |
+| **Mercenary** | Take low-stakes, non-sensitive work off the Lead's hands, on a cheap, low-trust model. |
+
+As configured, the workflow looked like this:
+
+<WideFigure caption="Figure 1. The workflow as my agent prompts defined it, not a recorded run. The highlight follows the default path; real tasks could take the other routes or repeat the correction loops.">
+	<AgentWorkflow lang="en" />
+</WideFigure>
+
+There were good ideas in this setup. Tasks had clear expectations, checks had to be run, and separate reviewers could catch something the writer had missed.
+
+But there were also a lot of issues that seem obvious to me now.
+
+The workflow separated activities that belonged together. The Lead investigated a problem or feature, then had to explain its understanding to the Builder. Rework went to a brand-new Builder session that only knew what the Lead wrote into its brief, not what the previous attempt had learned. And the Craftsman, my premium implementer, wasn't allowed to run commands to check its own work.
+
+Each handoff meant that context had to be written down, passed along, and understood again.
+
+These issues came from my own assumptions. And frankly, ignorance.
+
+In a later article, we'll dive deeper into a proposal to replace this workflow, this time informed by research on coding workflows, review, and agent teams.
+
+## Using the workflow day to day
+
+Before this workflow comes specification and planning. That's where I turn an idea into something I want to build. This series focuses on what happens once that work is ready to be implemented.
+
+I still start with pen and paper, then use AI to explore different directions and gather material. Small experiments and prototypes help me check assumptions and uncover risks, constraints, and blind spots. From there, I narrow the idea down to a specification describing the end product.
+
+When I'm happy with that description, I ask a model to create an implementation plan broken down into issues.
+
+After that, starting the work was pretty simple:
+
+1. Launch OpenCode.
+2. Select the Lead agent.
+3. Prompt it with "Implement issue #X."
+
+The Lead sometimes asked clarifying questions during exploration, though rarely when the specification was clear enough. I also had a stopping rule: if the review still wasn't clean after two rounds of fixes, the Lead had to stop and ask me how to proceed.
+
+When the same question, review escalation, or workflow mistake kept coming up, I could adjust the agents or the workflow to address the cause and prevent it from happening again on the next run.
+
+That was when it clicked: I was using a chat interface, but there wasn't much back and forth involved.
+
+My part was mostly starting the work and stepping in when needed. In between, I was pretty much blind to the things I was interested in:
+
+- Which agents were actually called, in what order, and where did the workflow repeat a step?
+- When one agent handed work to another, did it follow the format I had defined? Did the next agent receive the context it needed?
+- What did the repository look like at each step, including uncommitted changes? Which version of the code did the Reviewer actually check?
+- Which tools did each agent call, which skills did it load, and which MCP tools did it use? When, and for what part of the task?
+- Were the required checks run at the right moment, and rerun if the code changed afterward?
+- Where did the time and resources go? I wanted a precise breakdown of elapsed time, steps, tool calls, input and output tokens, and cost, both for the whole run and for each agent or stage.
+- Could I replay the same task, or restart at a particular step, with a different workflow, agent configuration, tool, or skill, and compare the results?
+
+## From workflow to experiment
+
+Writing down a workflow tells me what I want the agents to do. It doesn't, by itself, tell me what they actually did. I wanted to follow a run and see how its steps, code changes, and checks fit together.
+
+Some of this was missing from my setup. Other pieces weren't easy to access or connect. Bringing them together is what I mean by tooling around the workflow: a way to understand a run and use what I learn to set up the next experiment.
+
+For example, I'd like to change a reviewer's instructions and rerun the review from the same saved code and relevant context, with a record of the configuration used for each attempt. I could then compare the findings, the checks it ran, the time it took, and the cost. Did the same problem come back? Did the change help? Did it need fewer interventions from me?
+
+And if I push the idea further, there's a version of Engflow I'd really like to reach. A bit of a utopia, for now.
+
+If Engflow could collect all that data in a clean, usable way and make the work replayable, I could give an agent the tools to explore it and run experiments for me. I could ask something like:
+
+> Take this task and replay it with different configurations. Try changing the workflow, agents, models, thinking settings, tools, or skills. Find a configuration that still meets the task requirements but costs less, and show me how the attempts compare.
+
+I'd define what needs to be preserved and what I want to improve. The agent could inspect previous runs, choose configurations to try, run the experiments, and compare the outcomes. It could then come back with a proposed configuration and the results that explain why it thinks that configuration is better.
+
+That's what I want to explore with Engflow: an environment where I can try different ways of organizing the work, inspect what actually happens, and compare attempts to decide what to try next.

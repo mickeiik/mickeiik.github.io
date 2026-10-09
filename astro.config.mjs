@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig, envField, fontProviders } from 'astro/config';
+import mdx from '@astrojs/mdx';
 import { codeFrame } from './src/lib/shiki-code-frame.mjs';
 
 // https://astro.build/config
@@ -41,6 +42,8 @@ export default defineConfig({
 			fallbacks: ['monospace'],
 		},
 	],
+	// Posts can be .mdx to use components (e.g. src/components/diagrams).
+	integrations: [mdx()],
 	markdown: {
 		shikiConfig: {
 			// Colors come from the --astro-code-* tokens in src/styles/tokens.css.

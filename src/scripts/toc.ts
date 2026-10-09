@@ -1,11 +1,34 @@
 /**
  * Article table of contents:
  * - highlights the section being read and slides the marker to it,
- * - scrolls smoothly to a section on click and sweeps an underline under its heading,
- * - starts collapsed on phones.
+ * - scrolls smoothly to a section on click and, once there, sweeps an underline under its heading,
+ * - starts collapsed when it sits above the article (phones and narrow tablets).
  */
 
 let cleanup: (() => void) | undefined;
+
+/**
+ * Runs `done` once the page has stopped scrolling (a few frames without movement, or straight away when there
+ * was nothing to scroll), so the heading's underline plays when the reader gets there, not on the way.
+ */
+function afterScroll(done: () => void) {
+	let last = window.scrollY;
+	let still = 0;
+	let moved = false;
+	const started = performance.now();
+	function check() {
+		if (window.scrollY === last) still++;
+		else {
+			still = 0;
+			moved = true;
+		}
+		last = window.scrollY;
+		// Smooth scrolling can take a frame or two to start: wait longer before deciding nothing will move.
+		if ((moved && still >= 3) || still >= 8 || performance.now() - started > 2000) done();
+		else requestAnimationFrame(check);
+	}
+	requestAnimationFrame(check);
+}
 
 function init() {
 	cleanup?.();
@@ -18,7 +41,7 @@ function init() {
 	const headings = links.map((link) => document.getElementById(link.dataset.tocLink!)).filter(Boolean) as HTMLElement[];
 	const current = toc.querySelector<HTMLElement>('[data-toc-current]');
 	const details = toc.querySelector('details');
-	if (details && matchMedia('(max-width: 760px)').matches) details.open = false;
+	if (details && matchMedia('(max-width: 960px)').matches) details.open = false;
 
 	let active = -1;
 	function setActive(index: number) {
@@ -58,8 +81,10 @@ function init() {
 		history.replaceState(history.state, '', `#${heading.id}`);
 		setActive(links.indexOf(link));
 		heading.classList.remove('is-flashing');
-		void heading.offsetWidth;
-		heading.classList.add('is-flashing');
+		afterScroll(() => {
+			void heading.offsetWidth;
+			heading.classList.add('is-flashing');
+		});
 	}
 
 	window.addEventListener('scroll', onScroll, { passive: true });

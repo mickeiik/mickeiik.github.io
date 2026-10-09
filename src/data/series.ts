@@ -14,4 +14,12 @@ export interface Series {
  *     description: { en: '...', fr: '...' },
  *   },
  */
-export const series: Record<string, Series> = {};
+export const series: Record<string, Series> = {
+	engflow: {
+		title: { en: 'Building Engflow', fr: 'Construire Engflow' },
+		description: {
+			en: 'Building an environment to run, observe, and compare coding-agent workflows.',
+			fr: "Construire un environnement pour lancer, observer et comparer des workflows d'agents de code.",
+		},
+	},
+};
