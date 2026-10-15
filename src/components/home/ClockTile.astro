@@ -1,7 +1,7 @@
 ---
 import Tile from '../ui/Tile.astro';
 import { site } from '../../data/site';
-import { useTranslations, type Lang } from '../../i18n/utils';
+import { formatClock, useTranslations, type Lang } from '../../i18n/utils';
 
 /** Live local time in France. Rendered at build time, then kept current by src/scripts/clock.ts. */
 interface Props {
@@ -11,16 +11,15 @@ interface Props {
 
 const { lang, delay } = Astro.props;
 const t = useTranslations(lang);
-const [hours, minutes] = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: site.timeZone })
-	.format(new Date())
-	.split(':');
+const { hours, minutes, period } = formatClock(new Date(), lang, site.timeZone);
 ---
 
 <Tile tone="lime" delay={delay} animate="enter-fast" class="clock" aria-label={t('home.localTime')}>
 	<p class="mono command">$ date</p>
 	<div>
-		<p class="time display" data-clock data-time-zone={site.timeZone}>
+		<p class="time display" data-clock data-time-zone={site.timeZone} data-lang={lang}>
 			<span data-hours>{hours}</span><span class="colon">:</span><span data-minutes>{minutes}</span>
+			{period && <span class="period" data-period>{period}</span>}
 		</p>
 		<p class="zone">{t('home.timezone')}</p>
 	</div>
@@ -47,6 +46,12 @@ const [hours, minutes] = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', min
 		line-height: 1;
 		letter-spacing: -0.04em;
 		font-variant-numeric: tabular-nums;
+	}
+
+	.period {
+		margin-left: 0.15em;
+		font-size: 0.4em;
+		letter-spacing: 0;
 	}
 
 	.colon {

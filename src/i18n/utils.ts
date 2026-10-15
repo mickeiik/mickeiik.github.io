@@ -37,3 +37,14 @@ export function formatDate(date: Date, lang: Lang, style: 'long' | 'iso' = 'long
 	if (style === 'iso') return date.toISOString().slice(0, 10);
 	return date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
+
+/** Clock pieces for `lang`: 24-hour in French, 12-hour with AM/PM in English. */
+export function formatClock(date: Date, lang: Lang, timeZone: string) {
+	const parts = new Intl.DateTimeFormat(lang === 'fr' ? 'fr-FR' : 'en-US', {
+		hour: lang === 'fr' ? '2-digit' : 'numeric',
+		minute: '2-digit',
+		timeZone,
+	}).formatToParts(date);
+	const part = (type: string) => parts.find((p) => p.type.toLowerCase() === type)?.value ?? '';
+	return { hours: part('hour'), minutes: part('minute'), period: part('dayperiod') };
+}
